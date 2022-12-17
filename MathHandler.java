@@ -17,7 +17,7 @@ public class MathHandler implements ActionListener {
         this.add("+"); this.add("×"); this.add("÷"); this.add("−");
     }};
 
-    HashSet<String> charsCantFollowWPlus = new HashSet<String>() {{
+    HashSet<String> charsCantFollowThemselves = new HashSet<String>() {{
         this.add("+"); this.add("×"); this.add("÷"); this.add("−"); this.add("."); this.add("^");
     }};
 
@@ -36,11 +36,18 @@ public class MathHandler implements ActionListener {
         JButton sourceButton = (JButton) event.getSource();
         String buttonText = sourceButton.getText();
         String fieldText = calculatorField.getText();
+        String penultimateChar = fieldText.length() >= 2 ? fieldText.substring(fieldText.length() - 2, fieldText.length() - 1) : null;
         String lastChar = fieldText.substring(fieldText.length() - 1, fieldText.length());
         String newText = fieldText;
         switch (buttonText) {
             case "1", "2", "3", "4", "5", "6", "7", "8", "9" -> {
-                newText = fieldText.equals("0") ? buttonText : fieldText + buttonText;
+                if (fieldText.equals("0")) {
+                    newText = buttonText;
+                } else if (lastChar.equals("0") && !numericChars.contains(penultimateChar)) {
+                    newText = fieldText.substring(0, fieldText.length() - 1) + buttonText;
+                } else {
+                    newText = fieldText + buttonText;
+                }
             }
             case "0" -> {
                 if (!fieldText.equals("0")) {
@@ -61,18 +68,29 @@ public class MathHandler implements ActionListener {
                     newText = fieldText + buttonText;
                 }
             }
-            case "+", "×", "÷", "−" -> {
-                if (!fieldText.equals("0") && !charsCantFollowWPlus.contains(lastChar) && !lastChar.equals("(")) {
+            case "+", "−" -> {
+                if (!fieldText.equals("0") && !lastChar.equals("×") && !lastChar.equals("÷")) {
+                    if (lastChar.equals("+") || lastChar.equals("−" )) {
+                        newText = fieldText.substring(0, fieldText.length() - 2) + buttonText;
+                    } else {
+                        newText = fieldText + buttonText;
+                    }
+                } else if (fieldText.equals("0")) {
+                    newText = buttonText;
+                }
+            }
+            case "×", "÷" -> {
+                if (!fieldText.equals("0") && !lastChar.equals("×") && !lastChar.equals("÷") && !lastChar.equals("(")) {
                     newText = fieldText + buttonText;
                 }
             }
             case "𝘹ʸ" -> {
-                if (!fieldText.equals("0") && !charsCantFollowWPlus.contains(lastChar) && !lastChar.equals("(")) {
+                if (!fieldText.equals("0") && !charsCantFollowThemselves.contains(lastChar) && !lastChar.equals("(")) {
                     newText = fieldText + ")^";
                 }
             }
             case "√𝘹" -> {
-                if (!fieldText.equals("0") && !charsCantFollowWPlus.contains(lastChar) && !lastChar.equals("(")) {
+                if (!fieldText.equals("0") && !charsCantFollowThemselves.contains(lastChar) && !lastChar.equals("(")) {
                     newText = "√(" + fieldText + ")";
                 }
             }
@@ -80,7 +98,7 @@ public class MathHandler implements ActionListener {
                 newText = fieldText + buttonText;
             }
             case ")" -> {
-                if (!charsCantFollowWPlus.contains(lastChar)) {
+                if (!charsCantFollowThemselves.contains(lastChar)) {
                     int leftParenCount = 0;
                     int rightParenCount = 0;
                     for (int index = 0; index < fieldText.length(); index++) {
