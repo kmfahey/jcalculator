@@ -1,5 +1,6 @@
 package org.magentatobe.jcalculator;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -18,16 +19,12 @@ public class ParseTreeNode {
 
     public ParseTreeNode[] parseTreeSubNodes;
 
-    private static final Pattern balParensRegex = Pattern.compile("(?=\\()(?:(?=.*?\\((?!.*?\\1)(.*\\)(?!.*\\2).*))"
-                                                                  + "(?=.*?\\)(?!.*?\\2)(.*)).)+?.*?(?=\\1)[^(]*"
-                                                                  + "(?=\\2$)");
-
     public ParseTreeNode(String expr) {
         this(expr, -1);
     }
 
     public ParseTreeNode(String expr, int nodeTypeVal) throws IllegalArgumentException {
-        if (!balParensRegex.matcher(expr).matches()) {
+        if (!this.hasBalancedParentheses(expr)) {
             throw new IllegalArgumentException("expression '" + expr + "' doesn't have balanced parentheses");
         }
 
@@ -38,14 +35,45 @@ public class ParseTreeNode {
         }
 
         if (nodeTypeVal != -1) {
-            noteType = nodeTypeVal;
+            this.nodeType = nodeTypeVal;
         }
 
-        String[] parenTokens = this.tokenizeByParens(expression);
+        String[] exprTokens = this.tokenizeByParens(expression);
+        exprTokens = this.tokenizeByExpOrSqrt(exprTokens);
+        System.out.println(Arrays.toString(exprTokens));
     }
 
-    private String[] tokenizeByParens(String expression) {
-        assert balParensRegex.matcher(expression).matches();
+    public static String[] tokenizeByExpOrSqrt(String[] exprTokens) {
+        assert !exprTokens[exprTokens.length - 1].matches("[√\\^]$") && !exprTokens[0].matches("^\\^.*$");
+
+        ArrayList<String> tokensList = new ArrayList<>();
+
+        for (int index = 0; index < exprTokens.length; index++) {
+            String exprToken = exprTokens[index];
+
+            if (exprToken.matches("^\\(.*\\)$") || exprToken.matches("^[^√\\^]+$")) {
+                tokensList.add(exprToken);
+            } else {
+                String[] exprSubTokens = exprToken.split(
+                        "(?=√)" +                                  // matching ahead of a sqrt symbol
+                        "|(?<=√[0-9.]+)(?=[^0-9.])" +              // matching the end of a sqrt'd number 
+                        "|(?<=^|[^0-9.]+)(?=[0-9.]+\\^[0-9.]+)" +  // matching the start of one number exponent another number
+                        "|(?<=[0-9.]+^[0-9.]+)(?=$|[^0-9.]+)" +    // matching the end of one number exponent another number
+                        "|(?<=^\\^[0-9.]+)(?=$|[^0-9.]+)" +        // matching the end of string-start exponent-symbol number
+                        "|(?<=^|[^0-9.]+)(?=[0-9.]+\\^$)" +        // matching the beginning of number exponent-symbol string-end
+                        "|(?=^[√^]$)" +                            // matching the beginning of string-start exponent-symbol or sqrt-symbol string-end
+                        "|(?<=^[√^]$)");                           // matching the end of string-start exponent-symbol or sqrt-symbol string-end
+                for (String exprSubToken : exprSubTokens) {
+                    tokensList.add(exprSubToken);
+                }
+            }
+        }
+
+        return tokensList.toArray(new String[] {});
+    }
+
+    public static String[] tokenizeByParens(String expression) {
+        assert hasBalancedParentheses(expression);
         // Tests for balanced parens. The code can rely on the assumption that
         // the parens balance, and not include any error testing for unbalanced
         // parens.
@@ -61,8 +89,9 @@ public class ParseTreeNode {
 
                 if (curTokenAccum.length() > 0) {
                     tokensList.add(curTokenAccum);
-                    curTokenAccum = '(';
                 }
+
+                curTokenAccum = "(";
 
                 while (leftParenCount != rightParenCount) {
                     index++;
@@ -74,7 +103,6 @@ public class ParseTreeNode {
                     }
                 }
 
-                curTokenAccum += expression.charAt(index);
                 tokensList.add(curTokenAccum);
                 curTokenAccum = "";
                 index++;
@@ -84,8 +112,25 @@ public class ParseTreeNode {
             }
         }
 
-        tokensList.add(curTokenAccum);
+        if (curTokenAccum.length() != 0) {
+            tokensList.add(curTokenAccum);
+        }
 
-        return tokensList.toArray();
+        return tokensList.toArray(new String[] {});
+    }
+
+    public static boolean hasBalancedParentheses(String expression) {
+        int leftParenCount = 0;
+        int rightParenCount = 0;
+
+        for (int index = 0; index < expression.length(); index++) {
+            if (expression.charAt(index) == '(') {
+                leftParenCount++;
+            } else if (expression.charAt(index) == ')') {
+                rightParenCount++;
+            }
+        }
+
+        return leftParenCount == rightParenCount;
     }
 }
