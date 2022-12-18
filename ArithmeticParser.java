@@ -14,7 +14,21 @@ public class ArithmeticParser {
                                  String leftChildStr, ParseTreeNode leftChildNode,
                                  Character centerOperator,
                                  ParseTreeNode rightChildNode, String rightChildStr,
-                                 Character rightOperator) { }
+                                 Character rightOperator) {
+        String recursiveToString() {
+            StringBuilder strBld = new StringBuilder();
+            strBld.append("{");
+            if (leftOperator != null)   { strBld.append(leftOperator); }
+            if (leftChildStr != null)   { strBld.append(leftChildStr); }
+            if (leftChildNode != null)  { strBld.append(leftChildNode.recursiveToString()); }
+            if (centerOperator != null) { strBld.append(centerOperator); }
+            if (rightChildNode != null) { strBld.append(rightChildNode.recursiveToString()); }
+            if (rightChildStr != null)  { strBld.append(rightChildStr); }
+            if (rightOperator != null)  { strBld.append(rightOperator); }
+            strBld.append("}");
+            return strBld.toString();
+        }
+    }
 
     private record StackElem(String token, ParseTreeNode node) {
         public Character tokenChar() {
@@ -37,7 +51,30 @@ public class ArithmeticParser {
             return parseTreeResult;
         }
 
+        boolean reducedViaParennedBinaryOperatorRule = false;
+        boolean reducedViaBinaryOperatorRule = false;
+        boolean reducedViaParennedSquareRootRule = false;
+        boolean reducedViaSquareRootRule = false;
+        boolean reducedViaParennedRule = false;
+        boolean shiftedNewTokenOntoStack = false;
+
         while (tokensList.size() > 0 && elementsStack.size() > 1) {
+
+            if (!reducedViaParennedBinaryOperatorRule && !reducedViaBinaryOperatorRule
+                    && !reducedViaParennedSquareRootRule && !reducedViaSquareRootRule
+                    && !reducedViaParennedRule && !shiftedNewTokenOntoStack) {
+                throw new IllegalStateException("stack has not reduced to one node, but tokens list is empty and "
+                                                + "entire loop executed with no rules applicable-- parsing stalled "
+                                                + "(averting infinite loop)");
+            } else {
+                reducedViaParennedBinaryOperatorRule = false;
+                reducedViaBinaryOperatorRule = false;
+                reducedViaParennedSquareRootRule = false;
+                reducedViaSquareRootRule = false;
+                reducedViaParennedRule = false;
+                shiftedNewTokenOntoStack = false;
+            }
+
             if (stackPatternMatch("(", "EXPR", "+", "EXPR", ")")
                     || stackPatternMatch("(", "EXPR", "−", "EXPR", ")")
                     || stackPatternMatch("(", "EXPR", "×", "EXPR", ")")
@@ -50,6 +87,7 @@ public class ArithmeticParser {
                 StackElem leftParen = popStack();
                 pushStack(instanceStackElem(leftParen.tokenChar(), leftChild, operator.tokenChar(), rightChild,
                                             rightParen.tokenChar()));
+                reducedViaParennedBinaryOperatorRule = true;
             } else if (stackPatternMatch("EXPR", "+", "EXPR") || stackPatternMatch("EXPR", "−", "EXPR")
                     || stackPatternMatch("EXPR", "×", "EXPR") || stackPatternMatch("EXPR", "÷", "EXPR")
                     || stackPatternMatch("EXPR", "^", "EXPR")) {
@@ -57,6 +95,7 @@ public class ArithmeticParser {
                 StackElem operator = popStack();
                 StackElem leftChild = popStack();
                 pushStack(instanceStackElem(rightChild, operator.tokenChar(), leftChild));
+                reducedViaBinaryOperatorRule = true;
             } else if (stackPatternMatch("√", "(", "EXPR", ")") || stackPatternMatch("(", "√", "EXPR", ")")) {
                 StackElem rightOper = popStack();
                 StackElem soleChild = popStack();
@@ -64,17 +103,24 @@ public class ArithmeticParser {
                 StackElem leftOper = popStack();
                 pushStack(instanceStackElem(leftOper.tokenChar(), centerOper.tokenChar(), soleChild,
                                             rightOper.tokenChar()));
+                reducedViaParennedSquareRootRule = true;
             } else if (stackPatternMatch("√", "EXPR")) {
                 StackElem soleChild = popStack();
                 StackElem sqrtOperator = popStack();
                 pushStack(instanceStackElem(sqrtOperator.tokenChar(), soleChild));
+                reducedViaSquareRootRule = true;
             } else if (stackPatternMatch("(", "EXPR", ")")) {
                 StackElem rightParen = popStack();
                 StackElem soleChild = popStack();
                 StackElem leftParen = popStack();
                 pushStack(instanceStackElem(leftParen.tokenChar(), soleChild, rightParen.tokenChar()));
+                reducedViaParennedRule = true;
             } else if (tokensList.size() > 0) {
-                pushStack(new StackElem(tokensList.remove(0), null));
+                StackElem newStackElement = new StackElem(tokensList.remove(0), null);
+                assert (newStackElement.token() == null && newStackElement.node() != null
+                        || newStackElement.token() != null && newStackElement.node() == null);
+                pushStack(newStackElement);
+                shiftedNewTokenOntoStack = true;
             }
         }
 
@@ -93,25 +139,32 @@ public class ArithmeticParser {
 
     private boolean stackPatternMatch(final String... tokensPattern) {
         if (tokensPattern.length > elementsStack.size()) {
+            // If the pattern has more terms than there are elements in the
+            // stack, no match is possible.
             return false;
         } else {
             int patternOffset = tokensList.size() - tokensPattern.length;
             for (int index = patternOffset; index < tokensList.size(); index++) {
-                String patternComponent = tokensPattern[index];
+                String patternPart = tokensPattern[index];
                 StackElem stackElement = elementsStack.get(index);
-                if (stackElement.token() != null) { // && stackElement.node() == null
-                    if (patternComponent.equals("EXPR") && !stackElement.token().matches("^[0-9.]+$")) {
-                        return false;
-                    } else if (!stackElement.token().equals(patternComponent)) {
+                if (patternPart.equals("EXPR")) {
+                    // EXPR matches any number, or any non-null .node() value. If .token()
+                    // is non-null then .node() is null. So if .token() isn't a number
+                    // then the pattern doesn't match this term.
+                    if (stackElement.token() != null && !stackElement.token().matches("^[0-9.]+$")) {
                         return false;
                     }
-                } else if (stackElement.node() != null) {
-                    if (!patternComponent.equals("EXPR")) {
+                } else {
+                    // If it's not an EXPR then it's a single character, and can only match
+                    // .token(). If .token() is non-null then .node() is null. So if .token()
+                    // doesn't equal the pattern then this part of the pattern doesn't match.
+                    if (stackElement.token() != null && !stackElement.token().equals(patternPart)) {
                         return false;
                     }
                 }
             }
         }
+
         return true;
     }
 
@@ -142,58 +195,78 @@ public class ArithmeticParser {
 
     private StackElem instanceStackElem(final Character leftParen, final StackElem soleChild,
                                         final Character rightParen) {
+        StackElem newStackElement;
         if (soleChild.token() != null) {
-            return new StackElem(null, instanceNode(leftParen, soleChild.token(), rightParen));
+            newStackElement = new StackElem(null, instanceNode(leftParen, soleChild.token(), rightParen));
         } else {
-            return new StackElem(null, instanceNode(leftParen, soleChild.node(), rightParen));
+            newStackElement = new StackElem(null, instanceNode(leftParen, soleChild.node(), rightParen));
         }
+        assert (newStackElement.token() == null && newStackElement.node() != null
+                || newStackElement.token() != null && newStackElement.node() == null);
+        return newStackElement;
     }
 
     private StackElem instanceStackElem(final Character sqrtOperator, final StackElem soleChild) {
+        StackElem newStackElement;
         if (soleChild.token() != null) {
-            return new StackElem(null, instanceNode(sqrtOperator, soleChild.token()));
+            newStackElement =  new StackElem(null, instanceNode(sqrtOperator, soleChild.token()));
         } else {
-            return new StackElem(null, instanceNode(sqrtOperator, soleChild.node()));
+            newStackElement =  new StackElem(null, instanceNode(sqrtOperator, soleChild.node()));
         }
+        assert (newStackElement.token() == null && newStackElement.node() != null
+                || newStackElement.token() != null && newStackElement.node() == null);
+        return newStackElement;
     }
 
     private StackElem instanceStackElem(final Character leftOperator, final Character centerOperator,
                                         final StackElem soleChild, final Character rightOperator) {
+        StackElem newStackElement;
         if (soleChild.token() != null) {
-            return new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.token(), rightOperator));
+            newStackElement =  new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.token(), rightOperator));
         } else {
-            return new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.node(), rightOperator));
+            newStackElement =  new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.node(), rightOperator));
         }
+        assert (newStackElement.token() == null && newStackElement.node() != null
+                || newStackElement.token() != null && newStackElement.node() == null);
+        return newStackElement;
     }
 
     private StackElem instanceStackElem(final StackElem leftChild, final Character operator,
                                         final StackElem rightChild) {
+        StackElem newStackElement;
         if (leftChild.token() != null && rightChild.token() != null) {
-            return new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.token()));
+            newStackElement =  new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.token()));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            return new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.token()));
+            newStackElement =  new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.token()));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            return new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.node()));
+            newStackElement =  new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.node()));
         } else {
-            return new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.node()));
+            newStackElement =  new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.node()));
         }
+        assert (newStackElement.token() == null && newStackElement.node() != null
+                || newStackElement.token() != null && newStackElement.node() == null);
+        return newStackElement;
     }
 
     private StackElem instanceStackElem(final Character leftParen, final StackElem leftChild, final Character operator,
                                         final StackElem rightChild, final Character rightParen) {
+        StackElem newStackElement;
         if (leftChild.token() != null && rightChild.token() != null) {
-            return new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.token(),
+            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.token(),
                                                     rightParen));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            return new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.token(),
+            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.token(),
                                                     rightParen));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            return new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.node(),
+            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.node(),
                                                     rightParen));
         } else {
-            return new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.node(),
+            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.node(),
                                                     rightParen));
         }
+        assert (newStackElement.token() == null && newStackElement.node() != null
+                || newStackElement.token() != null && newStackElement.node() == null);
+        return newStackElement;
     }
 
     private ParseTreeNode instanceNode(final Character leftOperator, final Character centerOperator,
