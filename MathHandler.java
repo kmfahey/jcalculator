@@ -4,27 +4,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JTextPane;
-import java.util.HashSet;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.regex.MatchResult;
 
 public class MathHandler implements ActionListener {
 
     JTextPane calculatorField;
-
-    HashSet<String> operatorChars = new HashSet<String>() {{
-        this.add("+"); this.add("×"); this.add("÷"); this.add("−");
-    }};
-
-    HashSet<String> charsThatCantFollowThemselves = new HashSet<String>() {{
-        this.add("+"); this.add("×"); this.add("÷"); this.add("−"); this.add("."); this.add("^");
-    }};
-
-    HashSet<String> numericChars = new HashSet<String>() {{
-        this.add("0"); this.add("1"); this.add("2"); this.add("3"); this.add("4");
-        this.add("5"); this.add("6"); this.add("7"); this.add("8"); this.add("9");
-    }};
 
     public MathHandler(JTextPane calcField) {
         calculatorField = calcField;
@@ -34,7 +17,7 @@ public class MathHandler implements ActionListener {
         JButton sourceButton = (JButton) event.getSource();
         String buttonText = sourceButton.getText();
         String fieldText = calculatorField.getText();
-        String lastChar = String.valueOf(fieldText.charAt(fieldText.length() - 1));
+        String allButLastChar = fieldText.substring(0, fieldText.length() - 1);
         String newText = fieldText;
         switch (buttonText) {
             case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" -> {
@@ -43,7 +26,7 @@ public class MathHandler implements ActionListener {
                 } else if (fieldText.length() == 1) {
                     newText = fieldText + buttonText;
                 } else if (fieldText.matches("^.*[^0-9]0$")) {
-                    newText = fieldText.substring(0, fieldText.length() - 1) + buttonText;
+                    newText = allButLastChar + buttonText;
                 } else {
                     newText = fieldText + buttonText;
                 }
@@ -55,7 +38,7 @@ public class MathHandler implements ActionListener {
             }
             case "+", "−", "×", "÷" -> {
                 if (fieldText.matches("^.*[+−×÷^√]$")) {
-                    newText = fieldText.substring(0, fieldText.length() - 1) + buttonText;
+                    newText = allButLastChar + buttonText;
                 } else {
                     newText = fieldText + buttonText;
                 }
@@ -96,9 +79,7 @@ public class MathHandler implements ActionListener {
                     }
                 }
             }
-            case "C" -> {
-                newText = "0";
-            }
+            case "C" -> newText = "0";
             case "⌫" -> {
                 if (fieldText.length() > 1) {
                     newText = fieldText.substring(0, fieldText.length() - 1);

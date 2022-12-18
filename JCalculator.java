@@ -22,7 +22,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         Dimension screenDims = Toolkit.getDefaultToolkit().getScreenSize();
 
         Dimension windowDims = new Dimension((int) (screenDims.getWidth() * 0.25), (int) (screenDims.getHeight() * 0.5));
-        Dimension buttonDims = new Dimension((int) (windowDims.getWidth() * 0.25), (int) (windowDims.getHeight() * 1D/7D));
+        Dimension buttonDims = new Dimension((int) (windowDims.getWidth() * 0.25), (int) (windowDims.getHeight() / 7D));
 
         GridBagLayout calculatorLayout = new GridBagLayout();
         JPanel calculatorPanel = new JPanel(calculatorLayout);
