@@ -48,69 +48,31 @@ public class ArithmeticParser {
                 StackElem operator = popStack();
                 StackElem leftChild = popStack();
                 StackElem leftParen = popStack();
-                if (leftChild.token() != null && rightChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), leftChild.token(),
-                                            operator.tokenChar(), rightChild.token(), rightParen.tokenChar())));
-                } else if (leftChild.node() != null && rightChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), leftChild.node(),
-                                            operator.tokenChar(), rightChild.token(), rightParen.tokenChar())));
-                } else if (leftChild.token() != null && rightChild.node() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), leftChild.token(),
-                                            operator.tokenChar(), rightChild.node(), rightParen.tokenChar())));
-                } else {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), leftChild.node(),
-                                            operator.tokenChar(), rightChild.node(), rightParen.tokenChar())));
-                }
-            } else if (stackPatternMatch("(", "√", "EXPR", ")")) {
-                StackElem rightParen = popStack();
-                StackElem soleChild = popStack();
-                StackElem sqrtOperator = popStack();
-                StackElem leftParen = popStack();
-                if (soleChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), sqrtOperator.tokenChar(),
-                                            soleChild.token(), rightParen.tokenChar())));
-                } else {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), sqrtOperator.tokenChar(),
-                                            soleChild.node(), rightParen.tokenChar())));
-                }
-            } else if (stackPatternMatch("√", "EXPR")) {
-                StackElem sqrtOperator = popStack();
-                StackElem soleChild = popStack();
-                if (soleChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(sqrtOperator.tokenChar(), soleChild.token())));
-                } else {
-                    pushStack(new StackElem(null, instanceNode(sqrtOperator.tokenChar(), soleChild.node())));
-                }
+                pushStack(instanceStackElem(leftParen.tokenChar(), leftChild, operator.tokenChar(), rightChild,
+                                            rightParen.tokenChar()));
             } else if (stackPatternMatch("EXPR", "+", "EXPR") || stackPatternMatch("EXPR", "−", "EXPR")
                     || stackPatternMatch("EXPR", "×", "EXPR") || stackPatternMatch("EXPR", "÷", "EXPR")
                     || stackPatternMatch("EXPR", "^", "EXPR")) {
                 StackElem rightChild = popStack();
                 StackElem operator = popStack();
                 StackElem leftChild = popStack();
-                if (leftChild.token() != null && rightChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftChild.token(), operator.tokenChar(),
-                                            rightChild.token())));
-                } else if (leftChild.node() != null && rightChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftChild.node(), operator.tokenChar(),
-                                            rightChild.token())));
-                } else if (leftChild.token() != null && rightChild.node() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftChild.token(), operator.tokenChar(),
-                                            rightChild.node())));
-                } else {
-                    pushStack(new StackElem(null, instanceNode(leftChild.node(), operator.tokenChar(),
-                                            rightChild.node())));
-                }
+                pushStack(instanceStackElem(rightChild, operator.tokenChar(), leftChild));
+            } else if (stackPatternMatch("√", "(", "EXPR", ")") || stackPatternMatch("(", "√", "EXPR", ")")) {
+                StackElem rightOper = popStack();
+                StackElem soleChild = popStack();
+                StackElem centerOper = popStack();
+                StackElem leftOper = popStack();
+                pushStack(instanceStackElem(leftOper.tokenChar(), centerOper.tokenChar(), soleChild,
+                                            rightOper.tokenChar()));
+            } else if (stackPatternMatch("√", "EXPR")) {
+                StackElem soleChild = popStack();
+                StackElem sqrtOperator = popStack();
+                pushStack(instanceStackElem(sqrtOperator.tokenChar(), soleChild));
             } else if (stackPatternMatch("(", "EXPR", ")")) {
                 StackElem rightParen = popStack();
                 StackElem soleChild = popStack();
                 StackElem leftParen = popStack();
-                if (soleChild.token() != null) {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), soleChild.token(),
-                                            rightParen.tokenChar())));
-                } else {
-                    pushStack(new StackElem(null, instanceNode(leftParen.tokenChar(), soleChild.node(),
-                                            rightParen.tokenChar())));
-                }
+                pushStack(instanceStackElem(leftParen.tokenChar(), soleChild, rightParen.tokenChar()));
             } else if (tokensList.size() > 0) {
                 pushStack(new StackElem(tokensList.remove(0), null));
             }
@@ -176,6 +138,62 @@ public class ArithmeticParser {
         }
 
         return tokensList;
+    }
+
+    private StackElem instanceStackElem(final Character leftParen, final StackElem soleChild,
+                                        final Character rightParen) {
+        if (soleChild.token() != null) {
+            return new StackElem(null, instanceNode(leftParen, soleChild.token(), rightParen));
+        } else {
+            return new StackElem(null, instanceNode(leftParen, soleChild.node(), rightParen));
+        }
+    }
+
+    private StackElem instanceStackElem(final Character sqrtOperator, final StackElem soleChild) {
+        if (soleChild.token() != null) {
+            return new StackElem(null, instanceNode(sqrtOperator, soleChild.token()));
+        } else {
+            return new StackElem(null, instanceNode(sqrtOperator, soleChild.node()));
+        }
+    }
+
+    private StackElem instanceStackElem(final Character leftOperator, final Character centerOperator,
+                                        final StackElem soleChild, final Character rightOperator) {
+        if (soleChild.token() != null) {
+            return new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.token(), rightOperator));
+        } else {
+            return new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.node(), rightOperator));
+        }
+    }
+
+    private StackElem instanceStackElem(final StackElem leftChild, final Character operator,
+                                        final StackElem rightChild) {
+        if (leftChild.token() != null && rightChild.token() != null) {
+            return new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.token()));
+        } else if (leftChild.node() != null && rightChild.token() != null) {
+            return new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.token()));
+        } else if (leftChild.token() != null && rightChild.node() != null) {
+            return new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.node()));
+        } else {
+            return new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.node()));
+        }
+    }
+
+    private StackElem instanceStackElem(final Character leftParen, final StackElem leftChild, final Character operator,
+                                        final StackElem rightChild, final Character rightParen) {
+        if (leftChild.token() != null && rightChild.token() != null) {
+            return new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.token(),
+                                                    rightParen));
+        } else if (leftChild.node() != null && rightChild.token() != null) {
+            return new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.token(),
+                                                    rightParen));
+        } else if (leftChild.token() != null && rightChild.node() != null) {
+            return new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.node(),
+                                                    rightParen));
+        } else {
+            return new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.node(),
+                                                    rightParen));
+        }
     }
 
     private ParseTreeNode instanceNode(final Character leftOperator, final Character centerOperator,
