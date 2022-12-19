@@ -1,6 +1,7 @@
 package org.magentatobe.jcalculator;
 
 import java.util.HashSet;
+import java.util.StringJoiner;
 import java.util.ArrayList;
 
 public class ArithmeticParser {
@@ -10,27 +11,25 @@ public class ArithmeticParser {
         this.add('7'); this.add('8'); this.add('9'); this.add('0'); this.add('.');
     }};
 
-    private record ParseTreeNode(Character leftOperator,
+    public record ParseTreeNode(Character leftOperator,
                                  String leftChildStr, ParseTreeNode leftChildNode,
                                  Character centerOperator,
                                  ParseTreeNode rightChildNode, String rightChildStr,
                                  Character rightOperator) {
-        String recursiveToString() {
-            StringBuilder strBld = new StringBuilder();
-            strBld.append("{");
-            if (leftOperator != null)   { strBld.append(leftOperator); }
-            if (leftChildStr != null)   { strBld.append(leftChildStr); }
-            if (leftChildNode != null)  { strBld.append(leftChildNode.recursiveToString()); }
-            if (centerOperator != null) { strBld.append(centerOperator); }
-            if (rightChildNode != null) { strBld.append(rightChildNode.recursiveToString()); }
-            if (rightChildStr != null)  { strBld.append(rightChildStr); }
-            if (rightOperator != null)  { strBld.append(rightOperator); }
-            strBld.append("}");
-            return strBld.toString();
+        public String recursiveToString() {
+            StringJoiner strJoin = new StringJoiner(", ", "{ ", " }");
+            if (leftOperator != null)   { strJoin.add("'" + leftOperator + "'"); }
+            if (leftChildStr != null)   { strJoin.add("{ " + leftChildStr + " }"); }
+            if (leftChildNode != null)  { strJoin.add(leftChildNode.recursiveToString()); }
+            if (centerOperator != null) { strJoin.add("'" + centerOperator + "'"); }
+            if (rightChildNode != null) { strJoin.add(rightChildNode.recursiveToString()); }
+            if (rightChildStr != null)  { strJoin.add("{ " + rightChildStr + " }"); }
+            if (rightOperator != null)  { strJoin.add("'" + rightOperator + "'"); }
+            return strJoin.toString();
         }
     }
 
-    private record StackElem(String token, ParseTreeNode node) {
+    public record StackElem(String token, ParseTreeNode node) {
         public Character tokenChar() {
             return this.token().charAt(0);
         }
@@ -51,14 +50,14 @@ public class ArithmeticParser {
             return parseTreeResult;
         }
 
-        boolean reducedViaParennedBinaryOperatorRule = false;
-        boolean reducedViaBinaryOperatorRule = false;
-        boolean reducedViaParennedSquareRootRule = false;
-        boolean reducedViaSquareRootRule = false;
-        boolean reducedViaParennedRule = false;
-        boolean shiftedNewTokenOntoStack = false;
+        boolean reducedViaParennedBinaryOperatorRule = true;
+        boolean reducedViaBinaryOperatorRule = true;
+        boolean reducedViaParennedSquareRootRule = true;
+        boolean reducedViaSquareRootRule = true;
+        boolean reducedViaParennedRule = true;
+        boolean shiftedNewTokenOntoStack = true;
 
-        while (tokensList.size() > 0 && elementsStack.size() > 1) {
+        while (tokensList.size() > 0 || elementsStack.size() > 1) {
 
             if (!reducedViaParennedBinaryOperatorRule && !reducedViaBinaryOperatorRule
                     && !reducedViaParennedSquareRootRule && !reducedViaSquareRootRule
@@ -94,7 +93,7 @@ public class ArithmeticParser {
                 StackElem rightChild = popStack();
                 StackElem operator = popStack();
                 StackElem leftChild = popStack();
-                pushStack(instanceStackElem(rightChild, operator.tokenChar(), leftChild));
+                pushStack(instanceStackElem(leftChild, operator.tokenChar(), rightChild));
                 reducedViaBinaryOperatorRule = true;
             } else if (stackPatternMatch("√", "(", "EXPR", ")") || stackPatternMatch("(", "√", "EXPR", ")")) {
                 StackElem rightOper = popStack();
@@ -144,9 +143,11 @@ public class ArithmeticParser {
             return false;
         } else {
             int patternOffset = tokensList.size() - tokensPattern.length;
-            for (int index = patternOffset; index < tokensList.size(); index++) {
-                String patternPart = tokensPattern[index];
-                StackElem stackElement = elementsStack.get(index);
+            for (int patIndex = tokensPattern.length - 1, stackIndex = elementsStack.size() - 1;
+                    patIndex >= 0 && stackIndex >= 0;
+                    patIndex--, stackIndex--) {
+                String patternPart = tokensPattern[patIndex];
+                StackElem stackElement = elementsStack.get(stackIndex);
                 if (patternPart.equals("EXPR")) {
                     // EXPR matches any number, or any non-null .node() value. If .token()
                     // is non-null then .node() is null. So if .token() isn't a number
@@ -180,7 +181,7 @@ public class ArithmeticParser {
 
         while (exprChars.size() > 0) {
             if (NUMERIC_CHARS.contains(exprChars.get(0))) {
-                while (NUMERIC_CHARS.contains(exprChars.get(0))) {
+                while (exprChars.size() > 0 && NUMERIC_CHARS.contains(exprChars.get(0))) {
                     currentToken.append(exprChars.remove(0));
                 }
                 tokensList.add(currentToken.toString());
