@@ -1,47 +1,62 @@
 package org.magentatobe.jcalculator;
 
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.StringJoiner;
 import java.util.ArrayList;
+import java.util.Stack;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class ArithmeticParser {
-
     private static final HashSet<Character> NUMERIC_CHARS = new HashSet<>() {{
         this.add('1'); this.add('2'); this.add('3'); this.add('4'); this.add('5'); this.add('6');
         this.add('7'); this.add('8'); this.add('9'); this.add('0'); this.add('.');
     }};
 
-    public record ParseTreeNode(Character leftOperator,
-                                 String leftChildStr, ParseTreeNode leftChildNode,
-                                 Character centerOperator,
-                                 ParseTreeNode rightChildNode, String rightChildStr,
-                                 Character rightOperator) {
+    private static final HashMap<String, Integer> operatorPrecedence = new HashMap<>() {{
+        this.put("^", 3); this.put("√", 3); this.put("−u", 2); this.put("×", 1);
+        this.put("÷", 1); this.put("+", 0); this.put("−b", 0);
+    }};
+
+    private static final HashMap<String, Integer> operatorNumeracy = new HashMap<>() {{
+        this.put("√", 1); this.put("+", 2); this.put("^", 2); this.put("×", 2);
+        this.put("÷", 2); this.put("−b", 2); this.put("−u", 1);
+    }};
+
+    private static final HashMap<String, Boolean> operatorIsLeftAssoc = new HashMap<>() {{
+        this.put("+", true); this.put("×", true); this.put("÷", true); this.put("−u", true);
+        this.put("^", false); this.put("−b", true);
+    }};
+    public record ParseTreeNode(String leftChildStr, ParseTreeNode leftChildNode,
+                                Character centerOperator,
+                                ParseTreeNode rightChildNode, String rightChildStr) {
         public String recursiveToString() {
             StringJoiner strJoin = new StringJoiner(", ", "{ ", " }");
-            if (leftOperator != null)   { strJoin.add("'" + leftOperator + "'"); }
             if (leftChildStr != null)   { strJoin.add("{ " + leftChildStr + " }"); }
             if (leftChildNode != null)  { strJoin.add(leftChildNode.recursiveToString()); }
             if (centerOperator != null) { strJoin.add("'" + centerOperator + "'"); }
             if (rightChildNode != null) { strJoin.add(rightChildNode.recursiveToString()); }
             if (rightChildStr != null)  { strJoin.add("{ " + rightChildStr + " }"); }
-            if (rightOperator != null)  { strJoin.add("'" + rightOperator + "'"); }
             return strJoin.toString();
         }
     }
 
-    public record StackElem(String token, ParseTreeNode node) {
-        public Character tokenChar() {
-            return this.token().charAt(0);
-        }
-    }
+    public record StackElement(String token, ParseTreeNode node) { }
 
-    private final ArrayList<StackElem> elementsStack;
     private final ArrayList<String> tokensList;
+    private final Stack<String> operatorStack;
+    private final Stack<StackElement> operandStack;
     private ParseTreeNode parseTreeResult;
 
-    public ArithmeticParser(final String expression) {
-        elementsStack = new ArrayList<>();
+    public ArithmeticParser(final String expression) throws IllegalArgumentException {
+        if (!expression.matches("^[0-9.()+−×÷√^]+$")) {
+            throw new IllegalArgumentException("unrecognized characters in expression; expression must consist of "
+                                               + "only the characters 0123456789.()+−×÷√^");
+        }
         tokensList = tokenizeExpression(expression);
+        operatorStack = new Stack<>();
+        operandStack = new Stack<>();
         parseTreeResult = null;
     }
 
@@ -50,123 +65,84 @@ public class ArithmeticParser {
             return parseTreeResult;
         }
 
-        boolean reducedViaParennedBinaryOperatorRule = true;
-        boolean reducedViaBinaryOperatorRule = true;
-        boolean reducedViaParennedSquareRootRule = true;
-        boolean reducedViaSquareRootRule = true;
-        boolean reducedViaParennedRule = true;
-        boolean shiftedNewTokenOntoStack = true;
-
-        while (tokensList.size() > 0 || elementsStack.size() > 1) {
-
-            if (!reducedViaParennedBinaryOperatorRule && !reducedViaBinaryOperatorRule
-                    && !reducedViaParennedSquareRootRule && !reducedViaSquareRootRule
-                    && !reducedViaParennedRule && !shiftedNewTokenOntoStack) {
-                throw new IllegalStateException("stack has not reduced to one node, but tokens list is empty and "
-                                                + "entire loop executed with no rules applicable-- parsing stalled "
-                                                + "(averting infinite loop)");
-            } else {
-                reducedViaParennedBinaryOperatorRule = false;
-                reducedViaBinaryOperatorRule = false;
-                reducedViaParennedSquareRootRule = false;
-                reducedViaSquareRootRule = false;
-                reducedViaParennedRule = false;
-                shiftedNewTokenOntoStack = false;
-            }
-
-            if (stackPatternMatch("(", "EXPR", "+", "EXPR", ")")
-                    || stackPatternMatch("(", "EXPR", "−", "EXPR", ")")
-                    || stackPatternMatch("(", "EXPR", "×", "EXPR", ")")
-                    || stackPatternMatch("(", "EXPR", "÷", "EXPR", ")")
-                    || stackPatternMatch("(", "EXPR", "^", "EXPR", ")")) {
-                StackElem rightParen = popStack();
-                StackElem rightChild = popStack();
-                StackElem operator = popStack();
-                StackElem leftChild = popStack();
-                StackElem leftParen = popStack();
-                pushStack(instanceStackElem(leftParen.tokenChar(), leftChild, operator.tokenChar(), rightChild,
-                                            rightParen.tokenChar()));
-                reducedViaParennedBinaryOperatorRule = true;
-            } else if (stackPatternMatch("EXPR", "+", "EXPR") || stackPatternMatch("EXPR", "−", "EXPR")
-                    || stackPatternMatch("EXPR", "×", "EXPR") || stackPatternMatch("EXPR", "÷", "EXPR")
-                    || stackPatternMatch("EXPR", "^", "EXPR")) {
-                StackElem rightChild = popStack();
-                StackElem operator = popStack();
-                StackElem leftChild = popStack();
-                pushStack(instanceStackElem(leftChild, operator.tokenChar(), rightChild));
-                reducedViaBinaryOperatorRule = true;
-            } else if (stackPatternMatch("√", "(", "EXPR", ")") || stackPatternMatch("(", "√", "EXPR", ")")) {
-                StackElem rightOper = popStack();
-                StackElem soleChild = popStack();
-                StackElem centerOper = popStack();
-                StackElem leftOper = popStack();
-                pushStack(instanceStackElem(leftOper.tokenChar(), centerOper.tokenChar(), soleChild,
-                                            rightOper.tokenChar()));
-                reducedViaParennedSquareRootRule = true;
-            } else if (stackPatternMatch("√", "EXPR")) {
-                StackElem soleChild = popStack();
-                StackElem sqrtOperator = popStack();
-                pushStack(instanceStackElem(sqrtOperator.tokenChar(), soleChild));
-                reducedViaSquareRootRule = true;
-            } else if (stackPatternMatch("(", "EXPR", ")")) {
-                StackElem rightParen = popStack();
-                StackElem soleChild = popStack();
-                StackElem leftParen = popStack();
-                pushStack(instanceStackElem(leftParen.tokenChar(), soleChild, rightParen.tokenChar()));
-                reducedViaParennedRule = true;
-            } else if (tokensList.size() > 0) {
-                StackElem newStackElement = new StackElem(tokensList.remove(0), null);
-                assert (newStackElement.token() == null && newStackElement.node() != null
-                        || newStackElement.token() != null && newStackElement.node() == null);
-                pushStack(newStackElement);
-                shiftedNewTokenOntoStack = true;
+        while (tokensList.size() > 0) {
+            String firstToken = tokensList.remove(0);
+            // 1. if token is operand then push onto operand stack
+            if (firstToken.matches("^[0-9.]+$")) {
+                operandStack.push(new StackElement(firstToken, null));
+            // 2. if token is unary prefix operator then push onto operator stack
+            } else if (operatorNumeracy.containsKey(firstToken) && operatorNumeracy.get(firstToken) == 1) {
+                operatorStack.push(firstToken);
+            // 3. if token is binary operator, o1, then
+            } else if (operatorNumeracy.containsKey(firstToken) && operatorNumeracy.get(firstToken) == 2) {
+                // while operator token, o2, at top of operator stack, and
+                while (true) {
+                    String secondToken;
+                    int firstPrecedence;
+                    int secondPrecedence;
+                    boolean firstLeftAssoc;
+                    if (operatorStack.empty() || operatorStack.peek().equals("(")) {
+                        break;
+                    }
+                    secondToken = operatorStack.peek();
+                    firstPrecedence = operatorPrecedence.get(firstToken);
+                    secondPrecedence = operatorPrecedence.get(secondToken);
+                    try {
+                        firstLeftAssoc = operatorIsLeftAssoc.get(firstToken);
+                    } catch (NullPointerException exception) {
+                        System.out.println("token " + firstToken + " not in associativity table");
+                        exception.printStackTrace();
+                        System.exit(1);
+                        return null;
+                    }
+                    // and either o1 is left associative and its precedence is
+                    // <= to that of o2, or o1 is right associative and its
+                    // precedence < that of o2
+                    if (firstLeftAssoc && !(firstPrecedence <= secondPrecedence)) {
+                        break;
+                    } else if (!firstLeftAssoc && !(firstPrecedence < secondPrecedence)) {
+                        break;
+                    }
+                    // reduce expression
+                    operandStack.push(reduceExpression());
+                }
+                operatorStack.push(firstToken);
+            // 4. if token is left paren then push it onto operator stack
+            } else if (firstToken.equals("(")) {
+                operatorStack.push(firstToken);
+            // 5. if token is right paren
+            } else if (firstToken.equals(")")) {
+                // until token at top of operator stack is left paren
+                while (!operatorStack.empty() && !operatorStack.peek().equals("(")) {
+                    // reduce expression
+                    operandStack.push(reduceExpression());
+                }
+                // pop left paren from stack
+                operatorStack.pop();
             }
         }
 
-        parseTreeResult = popStack().node();
+        while (!operatorStack.empty()) {
+            operandStack.push(reduceExpression());
+        }
+
+        parseTreeResult = operandStack.pop().node();
 
         return parseTreeResult;
     }
 
-    private StackElem popStack() {
-        return elementsStack.remove(elementsStack.size() - 1);
-    }
-
-    private void pushStack(final StackElem newElem) {
-        elementsStack.add(newElem);
-    }
-
-    private boolean stackPatternMatch(final String... tokensPattern) {
-        if (tokensPattern.length > elementsStack.size()) {
-            // If the pattern has more terms than there are elements in the
-            // stack, no match is possible.
-            return false;
+    private StackElement reduceExpression() {
+        String operator = operatorStack.pop();
+        if (!operatorNumeracy.containsKey(operator)) {
+            throw new IllegalStateException("operator '" + operator +"' not in unary/binary table");
+        } else if (operatorNumeracy.get(operator) == 2) {
+            StackElement rightOperand = operandStack.pop();
+            StackElement leftOperand = operandStack.pop();
+            return instanceStackElement(leftOperand, operator.charAt(0), rightOperand);
         } else {
-            int patternOffset = tokensList.size() - tokensPattern.length;
-            for (int patIndex = tokensPattern.length - 1, stackIndex = elementsStack.size() - 1;
-                    patIndex >= 0 && stackIndex >= 0;
-                    patIndex--, stackIndex--) {
-                String patternPart = tokensPattern[patIndex];
-                StackElem stackElement = elementsStack.get(stackIndex);
-                if (patternPart.equals("EXPR")) {
-                    // EXPR matches any number, or any non-null .node() value. If .token()
-                    // is non-null then .node() is null. So if .token() isn't a number
-                    // then the pattern doesn't match this term.
-                    if (stackElement.token() != null && !stackElement.token().matches("^[0-9.]+$")) {
-                        return false;
-                    }
-                } else {
-                    // If it's not an EXPR then it's a single character, and can only match
-                    // .token(). If .token() is non-null then .node() is null. So if .token()
-                    // doesn't equal the pattern then this part of the pattern doesn't match.
-                    if (stackElement.token() != null && !stackElement.token().equals(patternPart)) {
-                        return false;
-                    }
-                }
-            }
+            StackElement soleOperand = operandStack.pop();
+            return instanceStackElement(operator.charAt(0), soleOperand);
         }
-
-        return true;
     }
 
     private static ArrayList<String> tokenizeExpression(final String expression) {
@@ -187,177 +163,83 @@ public class ArithmeticParser {
                 tokensList.add(currentToken.toString());
                 currentToken = new StringBuilder();
             } else {
-                tokensList.add(String.valueOf(exprChars.remove(0)));
+                String thisToken = String.valueOf(exprChars.remove(0));
+                if (thisToken.equals("−")) {
+                    String prevToken = (tokensList.size() == 0) ? null : tokensList.get(tokensList.size() - 1);
+                    if (prevToken == null || prevToken.equals("(") || operatorPrecedence.containsKey(prevToken)) {
+                        tokensList.add("−u");   // Distinguishing between unary minus and binary minus. If at expr 
+                    } else {                    // start, or if prev token was a left paren or an operator, then "−u" 
+                        tokensList.add("−b");   // is added for unary minus, otherwise "−b" for binary minus.
+                    }
+                } else {
+                    tokensList.add(thisToken);
+                }
             }
         }
 
         return tokensList;
     }
 
-    private StackElem instanceStackElem(final Character leftParen, final StackElem soleChild,
-                                        final Character rightParen) {
-        StackElem newStackElement;
+    private StackElement instanceStackElement(final Character operator, final StackElement soleChild) {
+        StackElement newStackElement;
         if (soleChild.token() != null) {
-            newStackElement = new StackElem(null, instanceNode(leftParen, soleChild.token(), rightParen));
+            newStackElement =  new StackElement(null, instanceNode(operator, soleChild.token()));
         } else {
-            newStackElement = new StackElem(null, instanceNode(leftParen, soleChild.node(), rightParen));
+            newStackElement =  new StackElement(null, instanceNode(operator, soleChild.node()));
         }
         assert (newStackElement.token() == null && newStackElement.node() != null
                 || newStackElement.token() != null && newStackElement.node() == null);
         return newStackElement;
     }
 
-    private StackElem instanceStackElem(final Character sqrtOperator, final StackElem soleChild) {
-        StackElem newStackElement;
-        if (soleChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(sqrtOperator, soleChild.token()));
-        } else {
-            newStackElement =  new StackElem(null, instanceNode(sqrtOperator, soleChild.node()));
-        }
-        assert (newStackElement.token() == null && newStackElement.node() != null
-                || newStackElement.token() != null && newStackElement.node() == null);
-        return newStackElement;
-    }
-
-    private StackElem instanceStackElem(final Character leftOperator, final Character centerOperator,
-                                        final StackElem soleChild, final Character rightOperator) {
-        StackElem newStackElement;
-        if (soleChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.token(), rightOperator));
-        } else {
-            newStackElement =  new StackElem(null, instanceNode(leftOperator, centerOperator, soleChild.node(), rightOperator));
-        }
-        assert (newStackElement.token() == null && newStackElement.node() != null
-                || newStackElement.token() != null && newStackElement.node() == null);
-        return newStackElement;
-    }
-
-    private StackElem instanceStackElem(final StackElem leftChild, final Character operator,
-                                        final StackElem rightChild) {
-        StackElem newStackElement;
+    private StackElement instanceStackElement(final StackElement leftChild, final Character operator,
+                                        final StackElement rightChild) {
+        StackElement newStackElement;
         if (leftChild.token() != null && rightChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.token()));
+            newStackElement =  new StackElement(null, instanceNode(leftChild.token(), operator, rightChild.token()));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.token()));
+            newStackElement =  new StackElement(null, instanceNode(leftChild.node(), operator, rightChild.token()));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftChild.token(), operator, rightChild.node()));
+            newStackElement =  new StackElement(null, instanceNode(leftChild.token(), operator, rightChild.node()));
         } else {
-            newStackElement =  new StackElem(null, instanceNode(leftChild.node(), operator, rightChild.node()));
+            newStackElement =  new StackElement(null, instanceNode(leftChild.node(), operator, rightChild.node()));
         }
         assert (newStackElement.token() == null && newStackElement.node() != null
                 || newStackElement.token() != null && newStackElement.node() == null);
         return newStackElement;
     }
 
-    private StackElem instanceStackElem(final Character leftParen, final StackElem leftChild, final Character operator,
-                                        final StackElem rightChild, final Character rightParen) {
-        StackElem newStackElement;
-        if (leftChild.token() != null && rightChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.token(),
-                                                    rightParen));
-        } else if (leftChild.node() != null && rightChild.token() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.token(),
-                                                    rightParen));
-        } else if (leftChild.token() != null && rightChild.node() != null) {
-            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.token(), operator, rightChild.node(),
-                                                    rightParen));
-        } else {
-            newStackElement =  new StackElem(null, instanceNode(leftParen, leftChild.node(), operator, rightChild.node(),
-                                                    rightParen));
-        }
-        assert (newStackElement.token() == null && newStackElement.node() != null
-                || newStackElement.token() != null && newStackElement.node() == null);
-        return newStackElement;
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final Character centerOperator,
-                                       final ParseTreeNode soleChildNode, final Character rightOperator) {
-        assert leftOperator != null && centerOperator != null && soleChildNode != null && rightOperator != null;
-        return new ParseTreeNode(leftOperator, null, null, centerOperator, soleChildNode, null, rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final Character centerOperator,
-                                       final String soleChildStr, final Character rightOperator) {
-        assert leftOperator != null && centerOperator != null && soleChildStr != null && rightOperator != null;
-        return new ParseTreeNode(leftOperator, null, null, centerOperator, null, soleChildStr, rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final String soleChildStr,
-                                       final Character rightOperator) {
-        assert leftOperator != null && soleChildStr != null && rightOperator != null;
-        return new ParseTreeNode(leftOperator, soleChildStr, null, null, null, null, rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final ParseTreeNode soleChildNode,
-                                       final Character rightOperator) {
-        assert leftOperator != null && soleChildNode != null && rightOperator != null;
-        return new ParseTreeNode(leftOperator, null, soleChildNode, null, null, null, rightOperator);
+    private ParseTreeNode instanceNode(final Character centerOperator, final ParseTreeNode soleChildNode) {
+        assert centerOperator != null && soleChildNode != null;
+        return new ParseTreeNode(null, null, centerOperator, soleChildNode, null);
     }
 
     private ParseTreeNode instanceNode(final Character soleOperator, final String soleChildStr) {
         assert soleOperator != null && soleChildStr != null;
-        return new ParseTreeNode(null, null, null, soleOperator, null, soleChildStr, null);
-    }
-
-    private ParseTreeNode instanceNode(final Character soleOperator, final ParseTreeNode soleChildNode) {
-        assert soleOperator != null && soleChildNode != null;
-        return new ParseTreeNode(null, null, null, soleOperator, soleChildNode, null, null);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final ParseTreeNode leftChildNode,
-                                       final Character centerOperator, final ParseTreeNode rightChildNode,
-                                       final Character rightOperator) {
-        assert (leftOperator != null && leftChildNode != null && centerOperator != null && rightChildNode != null
-                && rightOperator != null);
-        return new ParseTreeNode(leftOperator, null, leftChildNode, centerOperator, rightChildNode, null,
-                                 rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final String leftChildStr,
-                                       final Character centerOperator, final String rightChildStr,
-                                       final Character rightOperator) {
-        assert (leftOperator != null && leftChildStr != null && centerOperator != null && rightChildStr != null
-                && rightOperator != null);
-        return new ParseTreeNode(leftOperator, leftChildStr, null, centerOperator, null, rightChildStr, rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final ParseTreeNode leftChildNode,
-                                       final Character centerOperator, final String rightChildStr,
-                                       final Character rightOperator) {
-        assert (leftOperator != null && leftChildNode != null && centerOperator != null && rightChildStr != null
-                && rightOperator != null);
-        return new ParseTreeNode(leftOperator, null, leftChildNode, centerOperator, null, rightChildStr, rightOperator);
-    }
-
-    private ParseTreeNode instanceNode(final Character leftOperator, final String leftChildStr,
-                                       final Character centerOperator, final ParseTreeNode rightChildNode,
-                                       final Character rightOperator) {
-        assert (leftOperator != null && leftChildStr != null && centerOperator != null && rightChildNode != null
-                && rightOperator != null);
-        return new ParseTreeNode(leftOperator, leftChildStr, null, centerOperator, rightChildNode, null, rightOperator);
+        return new ParseTreeNode(null, null, soleOperator, null, soleChildStr);
     }
 
     private ParseTreeNode instanceNode(final String leftChildStr, final Character centerOperator,
                                        final ParseTreeNode rightChildNode) {
         assert leftChildStr != null && centerOperator != null && rightChildNode != null;
-        return new ParseTreeNode(null, leftChildStr, null, centerOperator, rightChildNode, null, null);
+        return new ParseTreeNode(leftChildStr, null, centerOperator, rightChildNode, null);
     }
 
     private ParseTreeNode instanceNode(final ParseTreeNode leftChildNode, final Character centerOperator,
                                        final ParseTreeNode rightChildNode) {
         assert leftChildNode != null && centerOperator != null && rightChildNode != null;
-        return new ParseTreeNode(null, null, leftChildNode, centerOperator, rightChildNode, null, null);
+        return new ParseTreeNode(null, leftChildNode, centerOperator, rightChildNode, null);
     }
 
     private ParseTreeNode instanceNode(final String leftChildStr, final Character centerOperator,
                                        final String rightChildStr) {
         assert leftChildStr != null && centerOperator != null && rightChildStr != null;
-        return new ParseTreeNode(null, leftChildStr, null, centerOperator, null, rightChildStr, null);
+        return new ParseTreeNode(leftChildStr, null, centerOperator, null, rightChildStr);
     }
 
     private ParseTreeNode instanceNode(final ParseTreeNode leftChildNode, final Character centerOperator,
                                        final String rightChildStr) {
         assert leftChildNode != null && centerOperator != null && rightChildStr != null;
-        return new ParseTreeNode(null, null, leftChildNode, centerOperator, null, rightChildStr, null);
+        return new ParseTreeNode(null, leftChildNode, centerOperator, null, rightChildStr);
     }
 }

@@ -18,14 +18,22 @@ public final class TestArithmeticParser extends TestCase {
         ArithmeticParser arithmeticParser = new ArithmeticParser("1+2+3+(4+5)");
         ArithmeticParser.ParseTreeNode parseTree = arithmeticParser.parseExpression();
         String parseTreeStr = parseTree.recursiveToString();
-        assertEquals("{ { { { 1 }, '+', { 2 } }, '+', { 3 } }, '+', { '(', { { 4 }, '+', { 5 } }, ')' } }", parseTreeStr);
+        assertEquals("{ { { { 1 }, '+', { 2 } }, '+', { 3 } }, '+', { { 4 }, '+', { 5 } } }", parseTreeStr);
     }
 
     public void testParseExpression3() {
         ArithmeticParser arithmeticParser = new ArithmeticParser("1+2×3+(4×5+6)");
         ArithmeticParser.ParseTreeNode parseTree = arithmeticParser.parseExpression();
         String parseTreeStr = parseTree.recursiveToString();
-        assertEquals("", parseTreeStr);
+        assertEquals("{ { { 1 }, '+', { { 2 }, '×', { 3 } } }, '+', { { { 4 }, '×', { 5 } }, '+', { 6 } } }",
+                     parseTreeStr);
+    }
+
+    public void testParseExpression4() {
+        ArithmeticParser arithmeticParser = new ArithmeticParser("−1+2×3+(4×5−√6)+7^8^9");
+        ArithmeticParser.ParseTreeNode parseTree = arithmeticParser.parseExpression();
+        String parseTreeStr = parseTree.recursiveToString();
+        assertEquals("{ { { { '−', { 1 } }, '+', { { 2 }, '×', { 3 } } }, '+', { { { 4 }, '×', { 5 } }, '−', "
+                     + "{ '√', { 6 } } } }, '+', { { 7 }, '^', { { 8 }, '^', { 9 } } } }", parseTreeStr);
     }
 }
-
