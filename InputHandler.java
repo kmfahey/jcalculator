@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JTextPane;
+import java.text.ParseException;
 
 public class InputHandler implements ActionListener {
 
@@ -104,6 +105,13 @@ public class InputHandler implements ActionListener {
                 }
             }
             case "=" -> {
+                try {
+                    ArithmeticParser arithmeticParser = new ArithmeticParser(fieldText);
+                    float expressionValue = arithmeticParser.parseExpression().evaluate();
+                    newText = String.valueOf((Math.floor(expressionValue) == expressionValue)
+                                             ? (int) expressionValue
+                                             : expressionValue);
+                } catch (ParseException | NullPointerException exception) { }
             }
             default -> { }
         }

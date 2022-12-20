@@ -108,7 +108,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         calculatorPanel.add(decimalPointButton,     buildConstraints(6, 2, 1, 1));
         calculatorPanel.add(equalsButton,           buildConstraints(6, 3, 1, 1));
 
-        MathHandler mathHandler = new MathHandler(displayTextPane);
+        InputHandler mathHandler = new InputHandler(displayTextPane);
 
         plusOrMinusButton.addActionListener(mathHandler);
         zeroButton.addActionListener(mathHandler);
