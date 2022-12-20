@@ -177,7 +177,7 @@ public class ArithmeticParser {
             } else {
                 switch (lastToken) {
                     case "(" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("−"))) {
+                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("−") || thisToken.equals("("))) {
                             throw new ParseException("in math expression, token '" + thisToken + "' cannot "
                                                      + "follow token '" + lastToken + "'", parsingOffset);
                         }
