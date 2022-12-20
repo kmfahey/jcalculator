@@ -7,13 +7,13 @@ import javax.swing.JTextPane;
 
 public class InputHandler implements ActionListener {
 
-    JTextPane calculatorField;
+    private JTextPane calculatorField;
 
-    public InputHandler(JTextPane calcField) {
+    public InputHandler(final JTextPane calcField) {
         calculatorField = calcField;
     }
 
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(final ActionEvent event) {
         JButton sourceButton = (JButton) event.getSource();
         String buttonText = sourceButton.getText();
         String fieldText = calculatorField.getText();
@@ -79,7 +79,9 @@ public class InputHandler implements ActionListener {
                     }
                 }
             }
-            case "C" -> newText = "0";
+            case "C" -> {
+                newText = "0";
+            }
             case "⌫" -> {
                 if (fieldText.length() > 1) {
                     newText = fieldText.substring(0, fieldText.length() - 1);
@@ -103,6 +105,7 @@ public class InputHandler implements ActionListener {
             }
             case "=" -> {
             }
+            default -> { }
         }
         calculatorField.setText(newText);
     }

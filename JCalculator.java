@@ -45,7 +45,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         JButton twoButton = new JButton("2");
         JButton threeButton = new JButton("3");
         JButton plusButton = new JButton("+");
-        
+
         JButton fourButton = new JButton("4");
         JButton fiveButton = new JButton("5");
         JButton sixButton = new JButton("6");
@@ -82,27 +82,27 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         calculatorPanel.add(rightParenthesisButton, buildConstraints(1, 1, 1, 1));
         calculatorPanel.add(clearButton,            buildConstraints(1, 2, 1, 1));
         calculatorPanel.add(backspaceButton,        buildConstraints(1, 3, 1, 1));
-                                                   
+
         calculatorPanel.add(reciprocalButton,       buildConstraints(2, 0, 1, 1));
         calculatorPanel.add(powerOfTwoButton,       buildConstraints(2, 1, 1, 1));
         calculatorPanel.add(squareRootButton,       buildConstraints(2, 2, 1, 1));
         calculatorPanel.add(divisionButton,         buildConstraints(2, 3, 1, 1));
-                                                   
+
         calculatorPanel.add(sevenButton,            buildConstraints(3, 0, 1, 1));
         calculatorPanel.add(eightButton,            buildConstraints(3, 1, 1, 1));
         calculatorPanel.add(nineButton,             buildConstraints(3, 2, 1, 1));
         calculatorPanel.add(timesButton,            buildConstraints(3, 3, 1, 1));
-                                                   
+
         calculatorPanel.add(fourButton,             buildConstraints(4, 0, 1, 1));
         calculatorPanel.add(fiveButton,             buildConstraints(4, 1, 1, 1));
         calculatorPanel.add(sixButton,              buildConstraints(4, 2, 1, 1));
         calculatorPanel.add(minusButton,            buildConstraints(4, 3, 1, 1));
-                                                   
+
         calculatorPanel.add(oneButton,              buildConstraints(5, 0, 1, 1));
         calculatorPanel.add(twoButton,              buildConstraints(5, 1, 1, 1));
         calculatorPanel.add(threeButton,            buildConstraints(5, 2, 1, 1));
         calculatorPanel.add(plusButton,             buildConstraints(5, 3, 1, 1));
-                                                   
+
         calculatorPanel.add(plusOrMinusButton,      buildConstraints(6, 0, 1, 1));
         calculatorPanel.add(zeroButton,             buildConstraints(6, 1, 1, 1));
         calculatorPanel.add(decimalPointButton,     buildConstraints(6, 2, 1, 1));
@@ -119,7 +119,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         twoButton.addActionListener(mathHandler);
         threeButton.addActionListener(mathHandler);
         plusButton.addActionListener(mathHandler);
-        
+
         fourButton.addActionListener(mathHandler);
         fiveButton.addActionListener(mathHandler);
         sixButton.addActionListener(mathHandler);
@@ -151,7 +151,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         twoButton.setFont(arial24);
         threeButton.setFont(arial24);
         plusButton.setFont(arial24);
-        
+
         fourButton.setFont(arial24);
         fiveButton.setFont(arial24);
         sixButton.setFont(arial24);
@@ -185,9 +185,9 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         elementConstraints.gridwidth = colspan;
         elementConstraints.insets = new Insets(5, 5, 5, 5);
         return elementConstraints;
-    } 
+    }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         JCalculator jcalc = new JCalculator();
         jcalc.setVisible(true);
         jcalc.setLocationRelativeTo(null);

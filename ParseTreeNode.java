@@ -94,8 +94,9 @@ public class ParseTreeNode {
                 return (float) Math.pow(leftChildValue, rightChildValue);
             case '√':
                 return (float) Math.sqrt(rightChildValue);
+            default:
+                return NaN;
         }
-        return NaN;
     }
 
     public String toString() {

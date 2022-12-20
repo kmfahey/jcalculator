@@ -7,38 +7,38 @@ import java.util.Stack;
 import java.text.ParseException;
 
 public class ArithmeticParser {
-    private static final HashSet<String> NUMERIC_CHARS = new HashSet<>() {{
-        this.add("1"); this.add("2"); this.add("3"); this.add("4"); this.add("5"); this.add("6");
-        this.add("7"); this.add("8"); this.add("9"); this.add("0"); this.add(".");
+    private static final HashSet<String> LEFT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
+        this.add("("); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
     }};
 
     private static final HashSet<String> LEFT_PAREN_RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
         this.add("("); this.add(")"); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
     }};
 
-    private static final HashSet<String> RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add(")"); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
-    }};
-
-    private static final HashSet<String> LEFT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add("("); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
-    }};
-
     private static final HashSet<String> LEFT_PAREN_SQUARE_ROOT_MINUS = new HashSet<>() {{
         this.add("("); this.add("√"); this.add("−");
     }};
 
-    private static final HashMap<String, Integer> operatorPrecedence = new HashMap<>() {{
+    private static final HashSet<String> NUMERIC_CHARS = new HashSet<>() {{
+        this.add("1"); this.add("2"); this.add("3"); this.add("4"); this.add("5"); this.add("6");
+        this.add("7"); this.add("8"); this.add("9"); this.add("0"); this.add(".");
+    }};
+
+    private static final HashSet<String> RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
+        this.add(")"); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
+    }};
+
+    private static final HashMap<String, Integer> OPERATOR_PRECEDENCE = new HashMap<>() {{
         this.put("^", 3); this.put("√", 3); this.put("−u", 2); this.put("×", 1);
         this.put("÷", 1); this.put("+", 0); this.put("−b", 0);
     }};
 
-    private static final HashMap<String, Integer> operatorNumeracy = new HashMap<>() {{
+    private static final HashMap<String, Integer> OPERATOR_NUMERACY = new HashMap<>() {{
         this.put("√", 1); this.put("+", 2); this.put("^", 2); this.put("×", 2);
         this.put("÷", 2); this.put("−b", 2); this.put("−u", 1);
     }};
 
-    private static final HashMap<String, Boolean> operatorIsLeftAssoc = new HashMap<>() {{
+    private static final HashMap<String, Boolean> OPERATOR_IS_LEFT_ASSOC = new HashMap<>() {{
         this.put("+", true); this.put("×", true); this.put("÷", true); this.put("−u", true);
         this.put("^", false); this.put("−b", true);
     }};
@@ -72,10 +72,10 @@ public class ArithmeticParser {
             if (firstToken.matches("^[0-9.]+$")) {
                 operandStack.push(new StackElement(firstToken, null));
             // 2. if token is unary prefix operator then push onto operator stack
-            } else if (operatorNumeracy.containsKey(firstToken) && operatorNumeracy.get(firstToken) == 1) {
+            } else if (OPERATOR_NUMERACY.containsKey(firstToken) && OPERATOR_NUMERACY.get(firstToken) == 1) {
                 operatorStack.push(firstToken);
             // 3. if token is binary operator, o1, then
-            } else if (operatorNumeracy.containsKey(firstToken) && operatorNumeracy.get(firstToken) == 2) {
+            } else if (OPERATOR_NUMERACY.containsKey(firstToken) && OPERATOR_NUMERACY.get(firstToken) == 2) {
                 // while operator token, o2, at top of operator stack, and
                 while (true) {
                     String secondToken;
@@ -86,10 +86,10 @@ public class ArithmeticParser {
                         break;
                     }
                     secondToken = operatorStack.peek();
-                    firstPrecedence = operatorPrecedence.get(firstToken);
-                    secondPrecedence = operatorPrecedence.get(secondToken);
+                    firstPrecedence = OPERATOR_PRECEDENCE.get(firstToken);
+                    secondPrecedence = OPERATOR_PRECEDENCE.get(secondToken);
                     try {
-                        firstLeftAssoc = operatorIsLeftAssoc.get(firstToken);
+                        firstLeftAssoc = OPERATOR_IS_LEFT_ASSOC.get(firstToken);
                     } catch (NullPointerException exception) {
                         System.out.println("token " + firstToken + " not in associativity table");
                         exception.printStackTrace();
@@ -134,9 +134,9 @@ public class ArithmeticParser {
 
     private StackElement reduceExpression() {
         String operator = operatorStack.pop();
-        if (!operatorNumeracy.containsKey(operator)) {
-            throw new IllegalStateException("operator '" + operator +"' not in unary/binary table");
-        } else if (operatorNumeracy.get(operator) == 2) {
+        if (!OPERATOR_NUMERACY.containsKey(operator)) {
+            throw new IllegalStateException("operator '" + operator + "' not in unary/binary table");
+        } else if (OPERATOR_NUMERACY.get(operator) == 2) {
             StackElement rightOperand = operandStack.pop();
             StackElement leftOperand = operandStack.pop();
             return instanceStackElement(leftOperand, operator.charAt(0), rightOperand);
@@ -152,7 +152,7 @@ public class ArithmeticParser {
         for (int index = 0; index < expression.length(); index++) {
             exprChars.add(expression.charAt(index));
         }
-        
+
         int parsingOffset = 0;
         String lastToken = null;
         ArrayList<String> tokensList = new ArrayList<>();
@@ -178,28 +178,29 @@ public class ArithmeticParser {
                 switch (lastToken) {
                     case "(" -> {
                         if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("−"))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot " +
-                                                     "follow token '" + lastToken + "'", parsingOffset);
+                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                     + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
                     case ")" -> {
                         if (!RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT.contains(thisToken)) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot " +
-                                                     "follow token '" + lastToken + "'", parsingOffset);
+                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                     + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
                     case "+", "−", "×", "÷", "√" -> {
                         if (!(NUMERIC_CHARS.contains(thisToken) || LEFT_PAREN_SQUARE_ROOT_MINUS.contains(thisToken))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot " +
-                                                     "follow token '" + lastToken + "'", parsingOffset);
+                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                     + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
                     case "^" -> {
                         if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("−"))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot " +
-                                                     "follow token '" + lastToken + "'", parsingOffset);
+                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                     + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
+                    default -> { }
                 }
             }
 
@@ -215,8 +216,8 @@ public class ArithmeticParser {
             } else {
                 if (thisToken.equals("−")) {
                     String prevToken = (tokensList.size() == 0) ? null : tokensList.get(tokensList.size() - 1);
-                    if (prevToken == null || prevToken.equals("(") || operatorPrecedence.containsKey(prevToken)) {
-                        tokensList.add("−u");   // Distinguishing between unary minus and binary minus. If at expr 
+                    if (prevToken == null || prevToken.equals("(") || OPERATOR_PRECEDENCE.containsKey(prevToken)) {
+                        tokensList.add("−u");   // Distinguishing between unary minus and binary minus. If at expr
                     } else {                    // start, or if prev thisToken was a left paren or an operator, then
                         tokensList.add("−b");   // "−u" is added for unary minus, otherwise "−b" for binary minus.
                     }
