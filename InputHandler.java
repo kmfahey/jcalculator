@@ -5,11 +5,11 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JTextPane;
 
-public class MathHandler implements ActionListener {
+public class InputHandler implements ActionListener {
 
     JTextPane calculatorField;
 
-    public MathHandler(JTextPane calcField) {
+    public InputHandler(JTextPane calcField) {
         calculatorField = calcField;
     }
 
