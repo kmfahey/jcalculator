@@ -1,14 +1,13 @@
 package org.magentatobe.jcalculator;
 
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JButton;
-import javax.swing.JTextPane;
 import java.text.ParseException;
 
 public class InputHandler implements ActionListener {
 
-    private JTextPane calculatorField;
+    private final JTextPane calculatorField;
 
     public InputHandler(final JTextPane calcField) {
         calculatorField = calcField;
@@ -26,7 +25,7 @@ public class InputHandler implements ActionListener {
                     newText = buttonText;
                 } else if (fieldText.length() == 1) {
                     newText = fieldText + buttonText;
-                } else if (fieldText.matches("^.*[^0-9]0$")) {
+                } else if (fieldText.matches("^.*[^0-9.]0$")) {
                     newText = allButLastChar + buttonText;
                 } else {
                     newText = fieldText + buttonText;
@@ -111,7 +110,9 @@ public class InputHandler implements ActionListener {
                     newText = String.valueOf((Math.floor(expressionValue) == expressionValue)
                                              ? (int) expressionValue
                                              : expressionValue);
-                } catch (ParseException | NullPointerException exception) { }
+                } catch (ParseException | NullPointerException exception) {
+                    assert true;
+                }
             }
             default -> { }
         }
