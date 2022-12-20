@@ -28,19 +28,6 @@ public class ArithmeticParser {
         this.put("+", true); this.put("×", true); this.put("÷", true); this.put("−u", true);
         this.put("^", false); this.put("−b", true);
     }};
-    public record ParseTreeNode(String leftChildStr, ParseTreeNode leftChildNode,
-                                Character centerOperator,
-                                ParseTreeNode rightChildNode, String rightChildStr) {
-        public String recursiveToString() {
-            StringJoiner strJoin = new StringJoiner(", ", "{ ", " }");
-            if (leftChildStr != null)   { strJoin.add("{ " + leftChildStr + " }"); }
-            if (leftChildNode != null)  { strJoin.add(leftChildNode.recursiveToString()); }
-            if (centerOperator != null) { strJoin.add("'" + centerOperator + "'"); }
-            if (rightChildNode != null) { strJoin.add(rightChildNode.recursiveToString()); }
-            if (rightChildStr != null)  { strJoin.add("{ " + rightChildStr + " }"); }
-            return strJoin.toString();
-        }
-    }
 
     public record StackElement(String token, ParseTreeNode node) { }
 
@@ -183,63 +170,24 @@ public class ArithmeticParser {
     private StackElement instanceStackElement(final Character operator, final StackElement soleChild) {
         StackElement newStackElement;
         if (soleChild.token() != null) {
-            newStackElement =  new StackElement(null, instanceNode(operator, soleChild.token()));
+            return new StackElement(null, new ParseTreeNode(operator, soleChild.token()));
         } else {
-            newStackElement =  new StackElement(null, instanceNode(operator, soleChild.node()));
+            return new StackElement(null, new ParseTreeNode(operator, soleChild.node()));
         }
-        assert (newStackElement.token() == null && newStackElement.node() != null
-                || newStackElement.token() != null && newStackElement.node() == null);
-        return newStackElement;
     }
 
     private StackElement instanceStackElement(final StackElement leftChild, final Character operator,
                                         final StackElement rightChild) {
         StackElement newStackElement;
         if (leftChild.token() != null && rightChild.token() != null) {
-            newStackElement =  new StackElement(null, instanceNode(leftChild.token(), operator, rightChild.token()));
+            return new StackElement(null, new ParseTreeNode(leftChild.token(), operator, rightChild.token()));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            newStackElement =  new StackElement(null, instanceNode(leftChild.node(), operator, rightChild.token()));
+            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, rightChild.token()));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            newStackElement =  new StackElement(null, instanceNode(leftChild.token(), operator, rightChild.node()));
+            return new StackElement(null, new ParseTreeNode(leftChild.token(), operator, rightChild.node()));
         } else {
-            newStackElement =  new StackElement(null, instanceNode(leftChild.node(), operator, rightChild.node()));
+            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, rightChild.node()));
         }
-        assert (newStackElement.token() == null && newStackElement.node() != null
-                || newStackElement.token() != null && newStackElement.node() == null);
-        return newStackElement;
     }
 
-    private ParseTreeNode instanceNode(final Character centerOperator, final ParseTreeNode soleChildNode) {
-        assert centerOperator != null && soleChildNode != null;
-        return new ParseTreeNode(null, null, centerOperator, soleChildNode, null);
-    }
-
-    private ParseTreeNode instanceNode(final Character soleOperator, final String soleChildStr) {
-        assert soleOperator != null && soleChildStr != null;
-        return new ParseTreeNode(null, null, soleOperator, null, soleChildStr);
-    }
-
-    private ParseTreeNode instanceNode(final String leftChildStr, final Character centerOperator,
-                                       final ParseTreeNode rightChildNode) {
-        assert leftChildStr != null && centerOperator != null && rightChildNode != null;
-        return new ParseTreeNode(leftChildStr, null, centerOperator, rightChildNode, null);
-    }
-
-    private ParseTreeNode instanceNode(final ParseTreeNode leftChildNode, final Character centerOperator,
-                                       final ParseTreeNode rightChildNode) {
-        assert leftChildNode != null && centerOperator != null && rightChildNode != null;
-        return new ParseTreeNode(null, leftChildNode, centerOperator, rightChildNode, null);
-    }
-
-    private ParseTreeNode instanceNode(final String leftChildStr, final Character centerOperator,
-                                       final String rightChildStr) {
-        assert leftChildStr != null && centerOperator != null && rightChildStr != null;
-        return new ParseTreeNode(leftChildStr, null, centerOperator, null, rightChildStr);
-    }
-
-    private ParseTreeNode instanceNode(final ParseTreeNode leftChildNode, final Character centerOperator,
-                                       final String rightChildStr) {
-        assert leftChildNode != null && centerOperator != null && rightChildStr != null;
-        return new ParseTreeNode(null, leftChildNode, centerOperator, null, rightChildStr);
-    }
 }
