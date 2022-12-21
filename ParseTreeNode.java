@@ -168,7 +168,7 @@ public class ParseTreeNode {
      * @return the arithmetic result of executing the calculation of this parse
      *         tree node and all child nodes
      */
-    public float evaluate() throws NullPointerException {
+    public float evaluate() throws NullPointerException, IllegalStateException {
         // Both leftChildFloat and leftChildNode are null when the centerOperator is unary, such as √
         Float leftChildValue = (leftChildFloat != null) ? leftChildFloat : (leftChildNode != null) ? leftChildNode.evaluate() : null;
         Float rightChildValue = (rightChildFloat != null) ? rightChildFloat : rightChildNode.evaluate();
@@ -180,7 +180,11 @@ public class ParseTreeNode {
             case '×':
                 return leftChildValue * rightChildValue;
             case '÷':
-                return leftChildValue / rightChildValue;
+                if (rightChildValue == 0) {
+                    throw new IllegalStateException("divide by zero");
+                } else {
+                    return leftChildValue / rightChildValue;
+                }
             case '^':
                 return (float) Math.pow(leftChildValue, rightChildValue);
             case '√':
