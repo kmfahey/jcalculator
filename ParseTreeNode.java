@@ -205,7 +205,11 @@ public class ParseTreeNode {
     public String toString() {
         StringJoiner strJoin = new StringJoiner(", ", "{ ", " }");
         if (leftChildFloat != null) {
-            strJoin.add("{ " + String.valueOf(leftChildFloat) + " }");
+            if (Math.floor(leftChildFloat) == leftChildFloat) {
+                strJoin.add("{ " + String.valueOf((int) (float) leftChildFloat) + " }");
+            } else {
+                strJoin.add("{ " + String.valueOf(leftChildFloat) + " }");
+            }
         }
         if (leftChildNode != null) {
             strJoin.add(leftChildNode.toString());
@@ -217,7 +221,11 @@ public class ParseTreeNode {
             strJoin.add(rightChildNode.toString());
         }
         if (rightChildFloat != null) {
-            strJoin.add("{ " + String.valueOf(rightChildFloat) + " }");
+            if (Math.floor(rightChildFloat) == rightChildFloat) {
+                strJoin.add("{ " + String.valueOf((int) (float) rightChildFloat) + " }");
+            } else {
+                strJoin.add("{ " + String.valueOf(rightChildFloat) + " }");
+            }
         }
         return strJoin.toString();
     }
