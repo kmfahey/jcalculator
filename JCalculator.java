@@ -9,7 +9,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -42,6 +41,8 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
                                                  (int) buttonDims.getHeight(), (int) buttonDims.getHeight(),
                                                  (int) buttonDims.getHeight()};
 
+        Dimension textPaneDimensions = new Dimension((int) (buttonDims.getWidth() * 4D - 10D), (int) (buttonDims.getHeight() - 10D));
+
         JButton plusOrMinusButton = new JButton("±");
         JButton zeroButton = new JButton("0");
         JButton decimalPointButton = new JButton(".");
@@ -55,7 +56,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         JButton fourButton = new JButton("4");
         JButton fiveButton = new JButton("5");
         JButton sixButton = new JButton("6");
-        JButton minusButton = new JButton("−");
+        JButton minusButton = new JButton("-");
 
         JButton sevenButton = new JButton("7");
         JButton eightButton = new JButton("8");
@@ -81,6 +82,8 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         StyleConstants.setFontFamily(attribs, "Arial");
         StyleConstants.setFontSize(attribs, 36);
         displayTextPane.setParagraphAttributes(attribs, true);
+        displayTextPane.setMaximumSize(textPaneDimensions);
+        displayTextPane.setPreferredSize(textPaneDimensions);
 
         calculatorPanel.add(displayTextPane, buildConstraints(0, 0, 1, 4));
 
@@ -182,122 +185,122 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
 
         /* rootPane.getInputMap().put(KeyStroke.getKeyStroke(""), "clickPlusOrMinusButton");
         rootPane.getActionMap().put("clickPlusOrMinusButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { plusOrMinusButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { plusOrMinusButton.doClick(); }
         }); */
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('0'), "clickZeroButton");
         rootPane.getActionMap().put("clickZeroButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { zeroButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { zeroButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('.'), "clickDecimalPointButton"); // missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('.'), "clickDecimalPointButton");
         rootPane.getActionMap().put("clickDecimalPointButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { decimalPointButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { decimalPointButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('='), "clickEqualsButton"); // missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('='), "clickEqualsButton");
         rootPane.getActionMap().put("clickEqualsButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { equalsButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { equalsButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('1'), "clickOneButton");
         rootPane.getActionMap().put("clickOneButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { oneButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { oneButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('2'), "clickTwoButton");
         rootPane.getActionMap().put("clickTwoButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { twoButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { twoButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('3'), "clickThreeButton");
         rootPane.getActionMap().put("clickThreeButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { threeButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { threeButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('+'), "clickPlusButton"); // missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('+'), "clickPlusButton");
         rootPane.getActionMap().put("clickPlusButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { plusButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { plusButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('4'), "clickFourButton");
         rootPane.getActionMap().put("clickFourButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { fourButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { fourButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('5'), "clickFiveButton");
         rootPane.getActionMap().put("clickFiveButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { fiveButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { fiveButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('6'), "clickSixButton");
         rootPane.getActionMap().put("clickSixButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { sixButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { sixButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('-'), "clickMinusButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('-'), "clickMinusButton");
         rootPane.getActionMap().put("clickMinusButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { minusButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { minusButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('7'), "clickSevenButton");
         rootPane.getActionMap().put("clickSevenButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { sevenButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { sevenButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('8'), "clickEightButton");
         rootPane.getActionMap().put("clickEightButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { eightButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { eightButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke('9'), "clickNineButton");
         rootPane.getActionMap().put("clickNineButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { nineButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { nineButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('*'), "clickTimesButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('*'), "clickTimesButton");
         rootPane.getActionMap().put("clickTimesButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { timesButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { timesButton.doClick(); }
         });
 
         /* rootPane.getInputMap().put(KeyStroke.getKeyStroke(""), "clickReciprocalButton");
         rootPane.getActionMap().put("clickReciprocalButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { reciprocalButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { reciprocalButton.doClick(); }
         }); */
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('^'), "clickExponentiationButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('^'), "clickExponentiationButton");
         rootPane.getActionMap().put("clickExponentiationButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { exponentiationButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { exponentiationButton.doClick(); }
         });
 
         /* rootPane.getInputMap().put(KeyStroke.getKeyStroke(""), "clickSquareRootButton");
         rootPane.getActionMap().put("clickSquareRootButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { squareRootButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { squareRootButton.doClick(); }
         }); */
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('/'), "clickDivisionButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('/'), "clickDivisionButton");
         rootPane.getActionMap().put("clickDivisionButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { divisionButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { divisionButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke('('), "clickLeftParenthesisButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke('('), "clickLeftParenthesisButton");
         rootPane.getActionMap().put("clickLeftParenthesisButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { leftParenthesisButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { leftParenthesisButton.doClick(); }
         });
 
-        rootPane.getInputMap().put(KeyStroke.getKeyStroke(')'), "clickRightParenthesisButton");// missing
+        rootPane.getInputMap().put(KeyStroke.getKeyStroke(')'), "clickRightParenthesisButton");
         rootPane.getActionMap().put("clickRightParenthesisButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { rightParenthesisButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { rightParenthesisButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "clickClearButton");
         rootPane.getActionMap().put("clickClearButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { clearButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { clearButton.doClick(); }
         });
 
         rootPane.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "clickBackspaceButton");
         rootPane.getActionMap().put("clickBackspaceButton", new AbstractAction() {
-            public void actionPerformed(ActionEvent event) { backspaceButton.doClick(); }
+            public void actionPerformed(final ActionEvent event) { backspaceButton.doClick(); }
         });
 
         this.validate();

@@ -8,15 +8,15 @@ import java.text.ParseException;
 
 public class ArithmeticParser {
     private static final HashSet<String> LEFT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add("("); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
+        this.add("("); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
     }};
 
     private static final HashSet<String> LEFT_PAREN_RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add("("); this.add(")"); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
+        this.add("("); this.add(")"); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
     }};
 
     private static final HashSet<String> LEFT_PAREN_SQUARE_ROOT_MINUS = new HashSet<>() {{
-        this.add("("); this.add("√"); this.add("−");
+        this.add("("); this.add("√"); this.add("-");
     }};
 
     private static final HashSet<String> NUMERIC_CHARS = new HashSet<>() {{
@@ -25,22 +25,22 @@ public class ArithmeticParser {
     }};
 
     private static final HashSet<String> RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add(")"); this.add("+"); this.add("−"); this.add("×"); this.add("÷"); this.add("^");
+        this.add(")"); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
     }};
 
     private static final HashMap<String, Integer> OPERATOR_PRECEDENCE = new HashMap<>() {{
-        this.put("^", 3); this.put("√", 3); this.put("−u", 2); this.put("×", 1);
-        this.put("÷", 1); this.put("+", 0); this.put("−b", 0);
+        this.put("^", 3); this.put("√", 3); this.put("-u", 2); this.put("×", 1);
+        this.put("÷", 1); this.put("+", 0); this.put("-b", 0);
     }};
 
     private static final HashMap<String, Integer> OPERATOR_NUMERACY = new HashMap<>() {{
         this.put("√", 1); this.put("+", 2); this.put("^", 2); this.put("×", 2);
-        this.put("÷", 2); this.put("−b", 2); this.put("−u", 1);
+        this.put("÷", 2); this.put("-b", 2); this.put("-u", 1);
     }};
 
     private static final HashMap<String, Boolean> OPERATOR_IS_LEFT_ASSOC = new HashMap<>() {{
-        this.put("+", true); this.put("×", true); this.put("÷", true); this.put("−u", true);
-        this.put("^", false); this.put("−b", true);
+        this.put("+", true); this.put("×", true); this.put("÷", true); this.put("-u", true);
+        this.put("^", false); this.put("-b", true);
     }};
 
     public record StackElement(String token, ParseTreeNode node) { }
@@ -51,9 +51,9 @@ public class ArithmeticParser {
     private ParseTreeNode parseTreeResult;
 
     public ArithmeticParser(final String expression) throws ParseException, IllegalArgumentException {
-        if (!expression.matches("^[0-9.()+−×÷√^]+$")) {
+        if (!expression.matches("^[0-9.()+-×÷√^]+$")) {
             throw new IllegalArgumentException("unrecognized characters in expression; expression must consist of "
-                                               + "only the characters 0123456789.()+−×÷√^");
+                                               + "only the characters 0123456789.()+-×÷√^");
         }
         tokensList = tokenizeExpression(expression);
         operatorStack = new Stack<>();
@@ -162,7 +162,7 @@ public class ArithmeticParser {
             String thisToken = String.valueOf(exprChars.remove(0));
 
             if (lastToken == null) {
-                if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("−"))) {
+                if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("-"))) {
                     throw new ParseException("math expression cannot begin with token '" + thisToken + "'",
                                              parsingOffset);
                 }
@@ -177,7 +177,7 @@ public class ArithmeticParser {
             } else {
                 switch (lastToken) {
                     case "(" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("−") || thisToken.equals("("))) {
+                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("-") || thisToken.equals("("))) {
                             throw new ParseException("in math expression, token '" + thisToken + "' cannot "
                                                      + "follow token '" + lastToken + "'", parsingOffset);
                         }
@@ -188,14 +188,14 @@ public class ArithmeticParser {
                                                      + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
-                    case "+", "−", "×", "÷", "√" -> {
+                    case "+", "-", "×", "÷", "√" -> {
                         if (!(NUMERIC_CHARS.contains(thisToken) || LEFT_PAREN_SQUARE_ROOT_MINUS.contains(thisToken))) {
                             throw new ParseException("in math expression, token '" + thisToken + "' cannot "
                                                      + "follow token '" + lastToken + "'", parsingOffset);
                         }
                     }
                     case "^" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("−"))) {
+                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("-"))) {
                             throw new ParseException("in math expression, token '" + thisToken + "' cannot "
                                                      + "follow token '" + lastToken + "'", parsingOffset);
                         }
@@ -214,12 +214,12 @@ public class ArithmeticParser {
                 tokensList.add(currentToken.toString());
                 currentToken = new StringBuilder();
             } else {
-                if (thisToken.equals("−")) {
+                if (thisToken.equals("-")) {
                     String prevToken = (tokensList.size() == 0) ? null : tokensList.get(tokensList.size() - 1);
                     if (prevToken == null || prevToken.equals("(") || OPERATOR_PRECEDENCE.containsKey(prevToken)) {
-                        tokensList.add("−u");   // Distinguishing between unary minus and binary minus. If at expr
+                        tokensList.add("-u");   // Distinguishing between unary minus and binary minus. If at expr
                     } else {                    // start, or if prev thisToken was a left paren or an operator, then
-                        tokensList.add("−b");   // "−u" is added for unary minus, otherwise "−b" for binary minus.
+                        tokensList.add("-b");   // "-u" is added for unary minus, otherwise "-b" for binary minus.
                     }
                 } else {
                     tokensList.add(thisToken);
@@ -234,7 +234,7 @@ public class ArithmeticParser {
 
     private StackElement instanceStackElement(final Character operator, final StackElement soleChild) {
         if (soleChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(operator, soleChild.token()));
+            return new StackElement(null, new ParseTreeNode(operator, Float.valueOf(soleChild.token())));
         } else {
             return new StackElement(null, new ParseTreeNode(operator, soleChild.node()));
         }
@@ -243,11 +243,11 @@ public class ArithmeticParser {
     private StackElement instanceStackElement(final StackElement leftChild, final Character operator,
                                         final StackElement rightChild) {
         if (leftChild.token() != null && rightChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(leftChild.token(), operator, rightChild.token()));
+            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator, Float.valueOf(rightChild.token())));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, rightChild.token()));
+            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, Float.valueOf(rightChild.token())));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            return new StackElement(null, new ParseTreeNode(leftChild.token(), operator, rightChild.node()));
+            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator, rightChild.node()));
         } else {
             return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, rightChild.node()));
         }

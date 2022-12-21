@@ -3,88 +3,179 @@ package org.magentatobe.jcalculator;
 import static java.lang.Float.NaN;
 import java.util.StringJoiner;
 
+/**
+ * Implements a node in a parse tree, such that a parse tree can be composed
+ * entirely of members of this class. It stores both a left and a right
+ * child, and can store a child as either a floating-point value or another
+ * ParseTreeNode. It also stores the operator of the expression the node
+ * represents; the operator can be either binary, in which case both children
+ * are defined, or unary, in which case only the right child is defined.
+ */
 public class ParseTreeNode {
 
-    private final String leftChildStr;
+    /** The left child of the node, if it's a terminal float value. */
+    private final Float leftChildFloat;
+
+    /** The left child of the node, if it's another ParseTreeNode. */
     private final ParseTreeNode leftChildNode;
+
+    /** The node's arithmetical operator. */
     private final Character centerOperator;
+
+    /** The right child of the node, if it's another ParseTreeNode. */
     private final ParseTreeNode rightChildNode;
-    private final String rightChildStr;
 
-    public ParseTreeNode(final Character centerOperatorVal, final ParseTreeNode soleChildNodeVal) {
+    /** The right child of the node, if it's a terminal float value. */
+    private final Float rightChildFloat;
+
+    /**
+     * Constructs a ParseTreeNode object with the centerOperator, and
+     * rightChildNode instance vars set, and leftChildFloat, leftChildNode, and
+     * rightChildFloat set to null.
+     *
+     * @param centerOperatorVal  the value for the node's operator, as a 
+     *                           char
+     * @param rightChildFloatVal the value for the node's right child, as a
+     *                           terminal float value
+     */
+    public ParseTreeNode(final Character centerOperatorVal, final ParseTreeNode rightChildNodeVal) {
         if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
-        if (soleChildNodeVal == null)  { throw new IllegalArgumentException("argument 'soleChildNodeVal' was null"); }
-        leftChildStr = null;
-        leftChildNode = null;
-        centerOperator = centerOperatorVal;
-        rightChildNode = soleChildNodeVal;
-        rightChildStr = null;
-    }
-
-    public ParseTreeNode(final Character soleOperatorVal, final String soleChildStrVal) {
-        if (soleOperatorVal == null) { throw new IllegalArgumentException("argument 'soleOperatorVal' was null"); }
-        if (soleChildStrVal == null) { throw new IllegalArgumentException("argument 'soleChildStrVal' was null"); }
-        leftChildStr = null;
-        leftChildNode = null;
-        centerOperator = soleOperatorVal;
-        rightChildNode = null;
-        rightChildStr = soleChildStrVal;
-    }
-
-    public ParseTreeNode(final String leftChildStrVal, final Character centerOperatorVal,
-                         final ParseTreeNode rightChildNodeVal) {
-        if (leftChildStrVal == null)   { throw new IllegalArgumentException("argument 'leftChildStrVal' was null"); }
-        if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
-        if (rightChildNodeVal == null) { throw new IllegalArgumentException("argument 'rightChildNodeVal' was null"); }
-        leftChildStr = leftChildStrVal;
+        if (rightChildNodeVal == null)  { throw new IllegalArgumentException("argument 'rightChildNodeVal' was null"); }
+        leftChildFloat = null;
         leftChildNode = null;
         centerOperator = centerOperatorVal;
         rightChildNode = rightChildNodeVal;
-        rightChildStr = null;
+        rightChildFloat = null;
     }
 
+    /**
+     * Constructs a ParseTreeNode object with the centerOperator and
+     * rightChildFloat instance vars set, and leftChildFloat, leftChildNode, and
+     * rightChildNode set to null.
+     *
+     * @param centerOperatorVal  the value for the node's operator, as a 
+     *                           char
+     * @param rightChildFloatVal the value for the node's right child, as a
+     *                           terminal float value
+     */
+    public ParseTreeNode(final Character centerOperatorVal, final Float rightChildFloatVal) {
+        if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
+        if (rightChildFloatVal == null) { throw new IllegalArgumentException("argument 'rightChildFloatVal' was null"); }
+        leftChildFloat = null;
+        leftChildNode = null;
+        centerOperator = centerOperatorVal;
+        rightChildNode = null;
+        rightChildFloat = rightChildFloatVal;
+    }
+
+    /**
+     * Constructs a ParseTreeNode object with the leftChildFloat,
+     * centerOperator, and rightChildNode instance vars set, and leftChildNode
+     * and rightChildFloat set to null.
+     *
+     * @param leftChildFloatVal the value for the node's left child, as a
+     *                          terminal float value
+     * @param centerOperatorVal the value for the node's operator, as a
+     *                          char
+     * @param rightChildNodeVal the value for the node's right child, as a
+     *                          ParseTreeNode
+     */
+    public ParseTreeNode(final Float leftChildFloatVal, final Character centerOperatorVal,
+                         final ParseTreeNode rightChildNodeVal) {
+        if (leftChildFloatVal == null)   { throw new IllegalArgumentException("argument 'leftChildFloatVal' was null"); }
+        if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
+        if (rightChildNodeVal == null) { throw new IllegalArgumentException("argument 'rightChildNodeVal' was null"); }
+        leftChildFloat = leftChildFloatVal;
+        leftChildNode = null;
+        centerOperator = centerOperatorVal;
+        rightChildNode = rightChildNodeVal;
+        rightChildFloat = null;
+    }
+
+    /**
+     * Constructs a ParseTreeNode object with the leftChildNode, centerOperator,
+     * and rightChildNode instance vars set, and leftChildFloat and
+     * rightChildFloat set to null.
+     *
+     * @param leftChildNodeVal  the value for the node's left child, as a
+     *                          ParseTreeNode
+     * @param centerOperatorVal the value for the node's operator, as a char
+     * @param rightChildNodeVal the value for the node's right child, as a
+     *                          ParseTreeNode
+     */
     public ParseTreeNode(final ParseTreeNode leftChildNodeVal, final Character centerOperatorVal,
                          final ParseTreeNode rightChildNodeVal) {
         if (leftChildNodeVal == null)  { throw new IllegalArgumentException("argument 'leftChildNodeVal' was null"); }
         if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
         if (rightChildNodeVal == null) { throw new IllegalArgumentException("argument 'rightChildNodeVal' was null"); }
-        leftChildStr = null;
+        leftChildFloat = null;
         leftChildNode = leftChildNodeVal;
         centerOperator = centerOperatorVal;
         rightChildNode = rightChildNodeVal;
-        rightChildStr = null;
+        rightChildFloat = null;
     }
 
-    public ParseTreeNode(final String leftChildStrVal, final Character centerOperatorVal, final String rightChildStrVal) {
-        if (leftChildStrVal == null)   { throw new IllegalArgumentException("argument 'leftChildStrVal' was null"); }
+    /**
+     * Constructs a ParseTreeNode object with the leftChildFloat,
+     * centerOperator, and rightChildFloat instance vars set, and leftChildNode
+     * and rightChildNode set to null.
+     *
+     * @param leftChildFloatVal  the value for the node's left child, as a
+     *                           terminal float value
+     * @param centerOperatorVal  the value for the node's operator, as a char
+     * @param rightChildFloatVal the value for the node's right child, as a
+     *                           terminal float value
+     */
+    public ParseTreeNode(final Float leftChildFloatVal, final Character centerOperatorVal, final Float rightChildFloatVal) {
+        if (leftChildFloatVal == null)   { throw new IllegalArgumentException("argument 'leftChildFloatVal' was null"); }
         if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
-        if (rightChildStrVal == null)  { throw new IllegalArgumentException("argument 'rightChildStrVal' was null"); }
-        leftChildStr = leftChildStrVal;
+        if (rightChildFloatVal == null)  { throw new IllegalArgumentException("argument 'rightChildFloatVal' was null"); }
+        leftChildFloat = leftChildFloatVal;
         leftChildNode = null;
         centerOperator = centerOperatorVal;
         rightChildNode = null;
-        rightChildStr = rightChildStrVal;
+        rightChildFloat = rightChildFloatVal;
     }
 
+    /**
+     * Constructs a ParseTreeNode object with the leftChildNode, centerOperator,
+     * and rightChildFloat instance vars set, and leftChildFloat and
+     * rightChildNode set to null.
+     *
+     * @param leftChildNodeVal   the value for the node's left child, as a
+     *                           ParseTreeNode
+     * @param centerOperatorVal  the value for the node's operator, as a char
+     * @param rightChildFloatVal the value for the node's right child, as a
+     *                           terminal float value
+     */
     public ParseTreeNode(final ParseTreeNode leftChildNodeVal, final Character centerOperatorVal,
-                         final String rightChildStrVal) {
+                         final Float rightChildFloatVal) {
         if (leftChildNodeVal == null)  { throw new IllegalArgumentException("argument 'leftChildNodeVal' was null"); }
         if (centerOperatorVal == null) { throw new IllegalArgumentException("argument 'centerOperatorVal' was null"); }
-        if (rightChildStrVal == null)  { throw new IllegalArgumentException("argument 'rightChildStrVal' was null"); }
-        leftChildStr = null;
+        if (rightChildFloatVal == null)  { throw new IllegalArgumentException("argument 'rightChildFloatVal' was null"); }
+        leftChildFloat = null;
         leftChildNode = leftChildNodeVal;
         centerOperator = centerOperatorVal;
         rightChildNode = null;
-        rightChildStr = rightChildStrVal;
+        rightChildFloat = rightChildFloatVal;
     }
 
+    /**
+     * Recursively evaluates the parse tree, returning a float value. Each child
+     * node has evaluate() called on it in turn and its return value is used in
+     * the calculation of this node's value.
+     *
+     * @return the arithmetic result of executing the calculation of this parse
+     *         tree node and all child nodes
+     */
     public float evaluate() throws NullPointerException {
-        Float leftChildValue = (leftChildStr != null) ? Float.valueOf(leftChildStr) : (leftChildNode != null) ? leftChildNode.evaluate() : null;
-        Float rightChildValue = (rightChildStr != null) ? Float.parseFloat(rightChildStr) : rightChildNode.evaluate();
+        // Both leftChildFloat and leftChildNode are null when the centerOperator is unary, such as √
+        Float leftChildValue = (leftChildFloat != null) ? leftChildFloat : (leftChildNode != null) ? leftChildNode.evaluate() : null;
+        Float rightChildValue = (rightChildFloat != null) ? rightChildFloat : rightChildNode.evaluate();
         switch (centerOperator) {
             case '+':
                 return leftChildValue + rightChildValue;
-            case '−':
+            case '-':
                 return (leftChildValue != null) ? leftChildValue - rightChildValue : -rightChildValue;
             case '×':
                 return leftChildValue * rightChildValue;
@@ -99,13 +190,31 @@ public class ParseTreeNode {
         }
     }
 
+    /**
+     * Recursively renders this ParseTreeNode and all child nodes into a
+     * one-line representation of the parse tree. Each child node (if any)
+     * has toString() called on it in turn and the return value is integrated
+     * in-line with the string representation of this node.
+     *
+     * @return a representation of the parse tree in a string
+     */
     public String toString() {
         StringJoiner strJoin = new StringJoiner(", ", "{ ", " }");
-        if (leftChildStr != null)   { strJoin.add("{ " + leftChildStr + " }"); }
-        if (leftChildNode != null)  { strJoin.add(leftChildNode.toString()); }
-        if (centerOperator != null) { strJoin.add("'" + centerOperator + "'"); }
-        if (rightChildNode != null) { strJoin.add(rightChildNode.toString()); }
-        if (rightChildStr != null)  { strJoin.add("{ " + rightChildStr + " }"); }
+        if (leftChildFloat != null) {
+            strJoin.add("{ " + String.valueOf(leftChildFloat) + " }");
+        }
+        if (leftChildNode != null) {
+            strJoin.add(leftChildNode.toString());
+        }
+        if (centerOperator != null) {
+            strJoin.add("'" + centerOperator + "'");
+        }
+        if (rightChildNode != null) {
+            strJoin.add(rightChildNode.toString());
+        }
+        if (rightChildFloat != null) {
+            strJoin.add("{ " + String.valueOf(rightChildFloat) + " }");
+        }
         return strJoin.toString();
     }
 }

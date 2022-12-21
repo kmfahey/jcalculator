@@ -36,15 +36,15 @@ public class InputHandler implements ActionListener {
                     newText = fieldText + buttonText;
                 }
             }
-            case "+", "−", "×", "÷" -> {
-                if (fieldText.matches("^.*[+−×÷^√]$")) {
+            case "+", "-", "×", "÷" -> {
+                if (fieldText.matches("^.*[+-×÷^√]$")) {
                     newText = allButLastChar + buttonText;
                 } else {
                     newText = fieldText + buttonText;
                 }
             }
             case "𝘹ʸ" -> {
-                if (fieldText.matches("^.*[+−×÷^√]$")) {
+                if (fieldText.matches("^.*[+-×÷^√]$")) {
                     newText = fieldText.substring(0, fieldText.length() - 1) + "^";
                 } else {
                     newText = fieldText + "^";
@@ -63,7 +63,7 @@ public class InputHandler implements ActionListener {
                 }
             }
             case ")" -> {
-                if (!fieldText.matches("^.*[+−×÷^√]$")) {
+                if (!fieldText.matches("^.*[+-×÷^√]$")) {
                     int leftParenCount = 0;
                     int rightParenCount = 0;
                     for (int index = 0; index < fieldText.length(); index++) {
@@ -90,10 +90,10 @@ public class InputHandler implements ActionListener {
                 }
             }
             case "±" -> {
-                if (fieldText.matches("^−.*$")) {
+                if (fieldText.matches("^-.*$")) {
                     newText = fieldText.substring(1);
                 } else {
-                    newText = "−" + fieldText;
+                    newText = "-" + fieldText;
                 }
             }
             case "1/𝘹" -> {
