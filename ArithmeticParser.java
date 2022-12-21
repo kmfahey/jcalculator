@@ -1,55 +1,55 @@
 package org.magentatobe.jcalculator;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.text.ParseException;
 
+/**
+ * Implements the shunting-yard algorithm to parse the given arithmetic
+ * expression and return a parse tree composed of ParseTreeNode objects. */
 public class ArithmeticParser {
-    private static final HashSet<String> LEFT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add("("); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
-    }};
 
-    private static final HashSet<String> LEFT_PAREN_RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add("("); this.add(")"); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
-    }};
-
-    private static final HashSet<String> LEFT_PAREN_SQUARE_ROOT_MINUS = new HashSet<>() {{
-        this.add("("); this.add("√"); this.add("-");
-    }};
-
-    private static final HashSet<String> NUMERIC_CHARS = new HashSet<>() {{
-        this.add("1"); this.add("2"); this.add("3"); this.add("4"); this.add("5"); this.add("6");
-        this.add("7"); this.add("8"); this.add("9"); this.add("0"); this.add(".");
-    }};
-
-    private static final HashSet<String> RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT = new HashSet<>() {{
-        this.add(")"); this.add("+"); this.add("-"); this.add("×"); this.add("÷"); this.add("^");
-    }};
-
+    /* A mapping that implements an operator precedence table. The value number
+     * is higher the higher the operator's precedence. */
     private static final HashMap<String, Integer> OPERATOR_PRECEDENCE = new HashMap<>() {{
         this.put("^", 3); this.put("√", 3); this.put("-u", 2); this.put("×", 1);
         this.put("÷", 1); this.put("+", 0); this.put("-b", 0);
     }};
 
+    /* A mapping that implements an operator numeracy table; value is 1 if the
+     * operator is unary, 2 if the operator is binary. */
     private static final HashMap<String, Integer> OPERATOR_NUMERACY = new HashMap<>() {{
         this.put("√", 1); this.put("+", 2); this.put("^", 2); this.put("×", 2);
         this.put("÷", 2); this.put("-b", 2); this.put("-u", 1);
     }};
 
+    /* A mapping that implements an operator associativity table; the value is
+     * true if the operator is left-associative, false if right-associative. */
     private static final HashMap<String, Boolean> OPERATOR_IS_LEFT_ASSOC = new HashMap<>() {{
         this.put("+", true); this.put("×", true); this.put("÷", true); this.put("-u", true);
         this.put("^", false); this.put("-b", true);
     }};
 
-    public record StackElement(String token, ParseTreeNode node) { }
+    /* Serves the purpose of a C Union type: an operand stack element may be
+     * either a String or a ParseTreeNode, so it's typed StackElement and the
+     * object is instanced around either value as appropriate. */
+    private record StackElement(String token, ParseTreeNode node) { }
 
     private final ArrayList<String> tokensList;
     private final Stack<String> operatorStack;
     private final Stack<StackElement> operandStack;
     private ParseTreeNode parseTreeResult;
 
+    /**
+     * Constructs the ArithmeticParser object from an arithmetical expression
+     * String argument.
+     *
+     * @param expression the arithmetical expression for this object to parse
+     * */
     public ArithmeticParser(final String expression) throws ParseException, IllegalArgumentException {
         if (!expression.matches("^[0-9.()+-×÷√^]+$")) {
             throw new IllegalArgumentException("unrecognized characters in expression; expression must consist of "
@@ -61,77 +61,92 @@ public class ArithmeticParser {
         parseTreeResult = null;
     }
 
+    /**
+     * Parses the arithmetic expression this object was instanced around, using
+     * Dijkstra's shunting-yard algorithm. Returns a ParseTreeNode object which
+     * is the root of the resultant parse tree.
+     *
+     * @return a ParseTreeNode object which is the root of the generated parse
+     *         tree
+     */
     public ParseTreeNode parseExpression() {
         if (parseTreeResult != null) {
             return parseTreeResult;
         }
 
+        // Pop a token off the tokens list
         while (tokensList.size() > 0) {
             String firstToken = tokensList.remove(0);
-            // 1. if token is operand then push onto operand stack
+            // If the token is an operand, then push onto operand stack.
             if (firstToken.matches("^[0-9.]+$")) {
                 operandStack.push(new StackElement(firstToken, null));
-            // 2. if token is unary prefix operator then push onto operator stack
+            // If the token is an unary prefix operator, then push onto operator stack.
             } else if (OPERATOR_NUMERACY.containsKey(firstToken) && OPERATOR_NUMERACY.get(firstToken) == 1) {
                 operatorStack.push(firstToken);
-            // 3. if token is binary operator, o1, then
+            // If the token is a binary operator, o1, then
             } else if (OPERATOR_NUMERACY.containsKey(firstToken) && OPERATOR_NUMERACY.get(firstToken) == 2) {
-                // while operator token, o2, at top of operator stack, and
+                String secondToken;
+                boolean firstLeftAssoc;
+                int firstPrecedence;
+                int secondPrecedence;
+                // While there's an operator token, o2, at top of operator stack;
                 while (true) {
-                    String secondToken;
-                    int firstPrecedence;
-                    int secondPrecedence;
-                    boolean firstLeftAssoc;
                     if (operatorStack.empty() || operatorStack.peek().equals("(")) {
                         break;
                     }
                     secondToken = operatorStack.peek();
+                    firstLeftAssoc = OPERATOR_IS_LEFT_ASSOC.get(firstToken);
                     firstPrecedence = OPERATOR_PRECEDENCE.get(firstToken);
                     secondPrecedence = OPERATOR_PRECEDENCE.get(secondToken);
-                    try {
-                        firstLeftAssoc = OPERATOR_IS_LEFT_ASSOC.get(firstToken);
-                    } catch (NullPointerException exception) {
-                        System.out.println("token " + firstToken + " not in associativity table");
-                        exception.printStackTrace();
-                        System.exit(1);
-                        return null;
-                    }
-                    // and either o1 is left associative and its precedence is
-                    // <= to that of o2, or o1 is right associative and its
-                    // precedence < that of o2
+                    // And either o1 is left associative and its precedence is
+                    // less-than-or-equal-to the precedence of o2, or o1 is
+                    // right associative and its precedence is less than the
+                    // precedence of o2,
                     if (firstLeftAssoc && !(firstPrecedence <= secondPrecedence)) {
                         break;
                     } else if (!firstLeftAssoc && !(firstPrecedence < secondPrecedence)) {
                         break;
                     }
-                    // reduce expression
+                    // Reduce an expression from the operator and operand stacks
+                    // onto the operand stack.
                     operandStack.push(reduceExpression());
                 }
                 operatorStack.push(firstToken);
-            // 4. if token is left paren then push it onto operator stack
+            // If the token is a left paren, then push it onto operator stack.
             } else if (firstToken.equals("(")) {
                 operatorStack.push(firstToken);
-            // 5. if token is right paren
+            // If the token is a right paren,
             } else if (firstToken.equals(")")) {
-                // until token at top of operator stack is left paren
+                // Until the token at top of operator stack is a left paren,
                 while (!operatorStack.empty() && !operatorStack.peek().equals("(")) {
-                    // reduce expression
+                    // Reduce an expression from the operator and operand stacks
+                    // onto the operand stack.
                     operandStack.push(reduceExpression());
                 }
-                // pop left paren from stack
+                // Then remove the left paren from the operator stack and
+                // discard it; and discard the right paren as well.
                 operatorStack.pop();
             }
         }
 
+        // When the token list is empty, iteratively reduce expressions onto the
+        // operand stack until the operator stack is empty.
         while (!operatorStack.empty()) {
             operandStack.push(reduceExpression());
         }
 
+        // The resultant parse tree will have its root node as the top operand
+        // on the operand stack.
         parseTreeResult = operandStack.pop().node();
 
         return parseTreeResult;
     }
 
+    /* Executes part of the shunting-yard algorithm. Pops an operator off the
+     * operator stack; if it's a binary operator, pops two operands off the
+     * operand stack, otherwise pops just one. Builds a new ParseTreeNode object
+     * from them embedded in a StackElement object and returns the StackElement
+     * object. */
     private StackElement reduceExpression() {
         String operator = operatorStack.pop();
         if (!OPERATOR_NUMERACY.containsKey(operator)) {
@@ -139,19 +154,23 @@ public class ArithmeticParser {
         } else if (OPERATOR_NUMERACY.get(operator) == 2) {
             StackElement rightOperand = operandStack.pop();
             StackElement leftOperand = operandStack.pop();
-            return instanceStackElement(leftOperand, operator.charAt(0), rightOperand);
+            return instanceNodeInStackElem(leftOperand, operator.charAt(0), rightOperand);
         } else {
             StackElement soleOperand = operandStack.pop();
-            return instanceStackElement(operator.charAt(0), soleOperand);
+            return instanceNodeInStackElem(operator.charAt(0), soleOperand);
         }
     }
 
+    /* Parses an arithmetic expression in a String into an ArrayList of tokens.
+     * Throws a ParseException if invalid syntax was used.
+     *
+     * @param  expression the arithmetic expression to parse
+     * @return a list of tokens the expression was parsed into
+     */
     private static ArrayList<String> tokenizeExpression(final String expression) throws ParseException {
-        ArrayList<Character> exprChars = new ArrayList<>();
-
-        for (int index = 0; index < expression.length(); index++) {
-            exprChars.add(expression.charAt(index));
-        }
+        ArrayList<Character> exprChars = new ArrayList<>(expression.chars()
+                                                                   .mapToObj(elem -> (char) elem)
+                                                                   .collect(Collectors.toList()));
 
         int parsingOffset = 0;
         String lastToken = null;
@@ -161,58 +180,27 @@ public class ArithmeticParser {
         while (exprChars.size() > 0) {
             String thisToken = String.valueOf(exprChars.remove(0));
 
-            if (lastToken == null) {
-                if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("-"))) {
-                    throw new ParseException("math expression cannot begin with token '" + thisToken + "'",
-                                             parsingOffset);
-                }
-            } else if (exprChars.size() == 0
-                       && !(NUMERIC_CHARS.contains(thisToken) || thisToken.equals(")"))) {
-                throw new ParseException("math expression cannot end with token '" + thisToken + "'", parsingOffset);
-            } else if (NUMERIC_CHARS.contains(lastToken)
-                       && !(NUMERIC_CHARS.contains(thisToken)
-                           || LEFT_PAREN_RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT.contains(thisToken))) {
-                throw new ParseException("in math expression, token '" + thisToken + "' cannot follow token '"
-                                         + lastToken + "'", parsingOffset);
-            } else {
-                switch (lastToken) {
-                    case "(" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("-") || thisToken.equals("("))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
-                                                     + "follow token '" + lastToken + "'", parsingOffset);
-                        }
-                    }
-                    case ")" -> {
-                        if (!RIGHT_PAREN_PLUS_MINUS_TIMES_DIV_CARAT.contains(thisToken)) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
-                                                     + "follow token '" + lastToken + "'", parsingOffset);
-                        }
-                    }
-                    case "+", "-", "×", "÷", "√" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || LEFT_PAREN_SQUARE_ROOT_MINUS.contains(thisToken))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
-                                                     + "follow token '" + lastToken + "'", parsingOffset);
-                        }
-                    }
-                    case "^" -> {
-                        if (!(NUMERIC_CHARS.contains(thisToken) || thisToken.equals("(") || thisToken.equals("-"))) {
-                            throw new ParseException("in math expression, token '" + thisToken + "' cannot "
-                                                     + "follow token '" + lastToken + "'", parsingOffset);
-                        }
-                    }
-                    default -> { }
-                }
-            }
+            /* Checking for syntax errors in the expression being parsed, based
+             * on the previous token, the current token, and whether there are
+             * characters remaining to parse. */
+            checkForSyntaxError(lastToken, thisToken, parsingOffset, exprChars.size() != 0);
 
-            if (NUMERIC_CHARS.contains(thisToken)) {
+            /* Found a numeric character, so keep appending numeric characters
+             * to a StringBuilder until a non-numeric character is encountered;
+             * append the accumulated numeric token to the tokensList. */
+            if (thisToken.matches("^[0-9.]+$")) {
                 currentToken.append(thisToken);
                 parsingOffset++;
-                while (exprChars.size() > 0 && NUMERIC_CHARS.contains(String.valueOf(exprChars.get(0)))) {
+                while (exprChars.size() > 0 && String.valueOf(exprChars.get(0)).matches("^[0-9.]+$")) {
                     currentToken.append(exprChars.remove(0));
                     parsingOffset++;
                 }
                 tokensList.add(currentToken.toString());
                 currentToken = new StringBuilder();
+            /* Found a non-numeric character; if it's a minus, distinguish
+             * between unary and binary minus and append a signal value to the
+             * tokensList; otherwise append the character to the tokensList as
+             * normal. */
             } else {
                 if (thisToken.equals("-")) {
                     String prevToken = (tokensList.size() == 0) ? null : tokensList.get(tokensList.size() - 1);
@@ -225,6 +213,8 @@ public class ArithmeticParser {
                     tokensList.add(thisToken);
                 }
             }
+            /* Tracking the number of characters parsed; used as an argument to
+             * the ParseException constructor if needed. */
             parsingOffset++;
             lastToken = thisToken;
         }
@@ -232,22 +222,124 @@ public class ArithmeticParser {
         return tokensList;
     }
 
-    private StackElement instanceStackElement(final Character operator, final StackElement soleChild) {
-        if (soleChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(operator, Float.valueOf(soleChild.token())));
+    /* Checks the token stream for a syntax error by comparsing the current
+     * token with the previous token and the number of characters left, throwing
+     * an error if the current token can't follow the previous one or can't
+     * occur at the beginning or end of the tokens list.
+     *
+     * @param lastToken              the previous token parsed from the input;
+     *                               is null if the first token was just parsed
+     * @param thisToken              the token just parsed
+     * @param parsingOffset          the number of characters of the expression
+     *                               parsed so far, used as an argument to the
+     *                               ParseException constructor
+     * @param exprCharsRemaining     true if there are still characters left to
+     *                               parse, false otherwise
+     */
+    private static void checkForSyntaxError(String lastToken, String thisToken, int parsingOffset,
+                                            boolean exprCharsRemaining) throws ParseException {
+
+        /* If lastToken is null then thisToken is the first token in the stream;
+         * if it isn't one of [0-9(-], that's an invalid starting token. */
+        if (lastToken == null) {
+            if (!(thisToken.matches("^([0-9.]+|[(-])$"))) {
+                throw new ParseException("math expression cannot begin with token '" + thisToken + "'",
+                                         parsingOffset);
+            }
+        /* If there's no characters remaining to parse, then thisToken is the
+         * last token in the stream; if it isn't one of [0-9.)], that's an
+         * invalid ending token. */
+        } else if (!exprCharsRemaining && !(thisToken.matches("^([0-9.]+|[)])$"))) {
+            throw new ParseException("math expression cannot end with token '" + thisToken + "'", parsingOffset);
+        /* If the last token was one of [0-9.], and the current token isn't one
+         * of [0-9()+×÷^-], then that's an invalid sequence. */
+        } else if (lastToken.matches("^[0-9.]+$") && !(thisToken.matches("^([0-9.]+|[()+×÷^-])$"))) {
+            throw new ParseException("in math expression, token '" + thisToken + "' cannot follow token '"
+                                     + lastToken + "'", parsingOffset);
         } else {
-            return new StackElement(null, new ParseTreeNode(operator, soleChild.node()));
+            switch (lastToken) {
+                case "(":
+                    /* If the last token was a "(" and the current token isn't
+                     * one of [0-9(-], that's an invalid sequence. */
+                    if (!(thisToken.matches("^([0-9.]+|[(-])$"))) {
+                        throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                 + "follow token '" + lastToken + "'", parsingOffset);
+                    }
+                    break;
+                case ")":
+                    /* If the last token was a ")" and the current token isn't one
+                     * of [(+-×÷^], that's an invalid sequence. */
+                    if (!thisToken.matches("^[+-×÷^]$")) {
+                        throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                 + "follow token '" + lastToken + "'", parsingOffset);
+                    }
+                    break;
+                    /* If the last token is one of [+-×÷√], and the current
+                     * token isn't one of [0-9.(√-], that's an invalid
+                     * sequence. */
+                case "+": case "-": case "×": case "÷": case "√":
+                    if (!(thisToken.matches("^([0-9.]+|[(√-])$"))) {
+                        throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                 + "follow token '" + lastToken + "'", parsingOffset);
+                    }
+                    break;
+                    /* If the last token is "^", and the current token isn't one
+                     * of [0-9(-], that's an invalid sequence. */
+                case "^":
+                    if (!(thisToken.matches("^([0-9.]+|[(-])$"))) {
+                        throw new ParseException("in math expression, token '" + thisToken + "' cannot "
+                                                 + "follow token '" + lastToken + "'", parsingOffset);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
-    private StackElement instanceStackElement(final StackElement leftChild, final Character operator,
+    /* Instances and returns a StackElement object with a null token() value and
+     * a node() value of a new ParseTreeNode object instanced from the contents
+     * of the StackElement object argument and the operator argument.
+     *
+     * @param operator   a arithmetic operator character
+     * @param rightChild a StackElement object with either a String token value
+     *                   or a ParseTreeNode node value
+     * @return           a StackElement object with a null token and a new
+     *                   ParseTreeNode object instanced from the method
+     *                   arguments
+     */
+    private StackElement instanceNodeInStackElem(final Character operator, final StackElement rightChild) {
+        if (rightChild.token() != null) {
+            return new StackElement(null, new ParseTreeNode(operator, Float.valueOf(rightChild.token())));
+        } else {
+            return new StackElement(null, new ParseTreeNode(operator, rightChild.node()));
+        }
+    }
+
+    /* Instances and returns a StackElement object with a null token() value and
+     * a node() value of a new ParseTreeNode object instanced from the contents
+     * of the two StackElement object arguments and the operator argument.
+     *
+     * @param leftChild  a StackElement object with either a String token value
+     *                   or a ParseTreeNode node value
+     * @param operator   a arithmetic operator character
+     * @param rightChild a StackElement object with either a String token value
+     *                   or a ParseTreeNode node value
+     * @return           a StackElement object with a null token and a new
+     *                   ParseTreeNode object instanced from the method
+     *                   arguments
+     */
+    private StackElement instanceNodeInStackElem(final StackElement leftChild, final Character operator,
                                         final StackElement rightChild) {
         if (leftChild.token() != null && rightChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator, Float.valueOf(rightChild.token())));
+            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator,
+                                                            Float.valueOf(rightChild.token())));
         } else if (leftChild.node() != null && rightChild.token() != null) {
-            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, Float.valueOf(rightChild.token())));
+            return new StackElement(null, new ParseTreeNode(leftChild.node(), operator,
+                                                            Float.valueOf(rightChild.token())));
         } else if (leftChild.token() != null && rightChild.node() != null) {
-            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator, rightChild.node()));
+            return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator,
+                                                            rightChild.node()));
         } else {
             return new StackElement(null, new ParseTreeNode(leftChild.node(), operator, rightChild.node()));
         }
