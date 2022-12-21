@@ -20,7 +20,7 @@ public class InputHandler implements ActionListener {
      * Constructs the object, storing the calculator's JTextPane for later.
      *
      * @param calcField The calculator's JTextPane object representing its
-     *                  display.
+     *                  display. */
     public InputHandler(final JTextPane calcField) {
         calculatorField = calcField;
     }
@@ -76,13 +76,13 @@ public class InputHandler implements ActionListener {
     }
 
     /* Handles one of the digit buttons being pressed. If the display text
-     * equals 0, it's replaced with the digit.
+     * equals "0", it's replaced with the digit.
      *
      * Otherwise if it's one character long, the digit is appended to the
      * display text.
      *
-     * Otherwise if the display text ends with a non-digit non-decimal-point
-     * followed by a 0 the 0 is replaced with a digit.
+     * Otherwise if the display text ends with [^0-9.] followed by a "0", the
+     * "0" is replaced with the digit.
      *
      * Otherwise the digit is appended to the display text. */
     private String handleDigit(final String displayText, final String buttonText, final String allButLastChar) {
@@ -97,10 +97,10 @@ public class InputHandler implements ActionListener {
         }
     }
 
-    /* Handles the "." button being pressed. If the display text is 0, or it's
-     * entirely digits, or it ends in a non-digit non-decimal-point followed by
-     * digits, a decimal point is appended to the display text. Otherwise, the
-     * display text is unaltered. */
+    /* Handles the "." button being pressed. If the display text is "0", or it's
+     * entirely digits, or it ends with [^0-9.] followed by [0-9],
+     * a "." is appended to the display text. Otherwise, the display text is
+     * unaltered. */
     private String handleDecimalPoint(final String displayText, final String buttonText) {
         if (displayText.equals("0") || displayText.matches("^[0-9]+$") || displayText.matches("^.*[^0-9.][0-9]+$")) {
             return displayText + buttonText;
@@ -110,7 +110,7 @@ public class InputHandler implements ActionListener {
     }
 
     /* Handles the "+", "×", "÷", or "-" buttons being pressed. If the display
-     * text ends in one of "+×÷^√-", it's replaced by the button text.
+     * text ends in one of [+×÷^√-], it's replaced by the button text.
      * Otherwise the button text is appended to the end of the display text. */
     private String handlePlusMinusMultDiv(final String displayText, final String buttonText,
                                           final String allButLastChar) {
@@ -122,8 +122,8 @@ public class InputHandler implements ActionListener {
     }
 
     /* Handles the "𝘹ʸ" button being pressed. If the display text ends in
-     * one of +-×÷^√, it's replaced by a ^. Otherwise, a ^ is appended to
-     * the display text. */
+     * one of [+-×÷^√], it's replaced by a "^". Otherwise, a "^" is appended
+     * to the display text. */
     private String handleExponentiation(final String displayText) {
         if (displayText.matches("^.*[+-×÷^√]$")) {
             return displayText.substring(0, displayText.length() - 1) + "^";
@@ -133,7 +133,7 @@ public class InputHandler implements ActionListener {
     }
 
     /* Handles the "√" button being pressed. If the display text doesn't
-     * end in a digit or a √, adds a √ to the end. Otherwise leaves it
+     * end in a digit or a "√", adds a "√" to the end. Otherwise leaves it
      * unchanged. */
     private String handleSquareRoot(final String displayText) {
         if (!displayText.matches("^.*[0-9.√]$")) {
@@ -143,8 +143,8 @@ public class InputHandler implements ActionListener {
         }
     }
 
-    /* Handles the "(" button being pressed. If the display text is 0, sets it
-     * to (. If display text doesn't end in a number, adds a left paren at the
+    /* Handles the "(" button being pressed. If the display text is "0", sets it
+     * to "(". If display text doesn't end in a number, adds a left paren at the
      * end. Otherwise, leaves the display text unchanged. */
     private String handleLeftParen(final String displayText, final String buttonText) {
         if (displayText.equals("0")) {
@@ -178,7 +178,7 @@ public class InputHandler implements ActionListener {
         }
     }
 
-    /* Handles the clear button being pressed. Sets the display text to 0. */
+    /* Handles the clear button being pressed. Sets the display text to "0". */
     private String handleClear(final String displayText) {
         return "0";
     }
@@ -195,7 +195,8 @@ public class InputHandler implements ActionListener {
     }
 
     /* Handles the "±" button being pressed. If the display text already begins
-     * with a -, it's removed; otherwise a - is prepended to the display text. */
+     * with a "-", it's removed; otherwise a "-" is prepended to the display
+     * text. */
     private String handlePlusOrMinus(final String displayText) {
         if (displayText.matches("^-.*$")) {
             return displayText.substring(1);
@@ -226,7 +227,7 @@ public class InputHandler implements ActionListener {
             if (Math.floor(expressionValue) == expressionValue) {
                 return String.valueOf((int) expressionValue);
             } else {
-                return expressionValue;
+                return String.valueOf(expressionValue);
             }
         } catch (IllegalStateException exception) {
             return "Error";
