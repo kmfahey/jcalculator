@@ -37,29 +37,9 @@ public class ArithmeticParser {
     /* Serves the purpose of a C Union type: an operand stack element may be
      * either a String or a ParseTreeNode, so it's typed StackElement and the
      * object is instanced around either value as appropriate. */
-    private record StackElement(String token, ParseTreeNode node) { }
+    private static record StackElement(String token, ParseTreeNode node) { }
 
-    private final ArrayList<String> tokensList;
-    private final Stack<String> operatorStack;
-    private final Stack<StackElement> operandStack;
-    private ParseTreeNode parseTreeResult;
-
-    /**
-     * Constructs the ArithmeticParser object from an arithmetical expression
-     * String argument.
-     *
-     * @param expression the arithmetical expression for this object to parse
-     * */
-    public ArithmeticParser(final String expression) throws ParseException, IllegalArgumentException {
-        if (!expression.matches("^[0-9.()+-×÷√^]+$")) {
-            throw new IllegalArgumentException("unrecognized characters in expression; expression must consist of "
-                                               + "only the characters 0123456789.()+-×÷√^");
-        }
-        tokensList = tokenizeExpression(expression);
-        operatorStack = new Stack<>();
-        operandStack = new Stack<>();
-        parseTreeResult = null;
-    }
+    private ArithmeticParser() { }
 
     /**
      * Parses the arithmetic expression this object was instanced around, using
@@ -69,10 +49,10 @@ public class ArithmeticParser {
      * @return a ParseTreeNode object which is the root of the generated parse
      *         tree
      */
-    public ParseTreeNode parseExpression() {
-        if (parseTreeResult != null) {
-            return parseTreeResult;
-        }
+    public static ParseTreeNode parseExpression(String expression) throws ParseException {
+        ArrayList<String> tokensList = tokenizeExpression(expression);
+        Stack<String> operatorStack = new Stack<>();
+        Stack<StackElement> operandStack = new Stack<>();
 
         // Pop a token off the tokens list
         while (tokensList.size() > 0) {
@@ -109,7 +89,7 @@ public class ArithmeticParser {
                     }
                     // Reduce an expression from the operator and operand stacks
                     // onto the operand stack.
-                    operandStack.push(reduceExpression());
+                    operandStack.push(reduceExpression(operatorStack, operandStack));
                 }
                 operatorStack.push(firstToken);
             // If the token is a left paren, then push it onto operator stack.
@@ -121,7 +101,7 @@ public class ArithmeticParser {
                 while (!operatorStack.empty() && !operatorStack.peek().equals("(")) {
                     // Reduce an expression from the operator and operand stacks
                     // onto the operand stack.
-                    operandStack.push(reduceExpression());
+                    operandStack.push(reduceExpression(operatorStack, operandStack));
                 }
                 // Then remove the left paren from the operator stack and
                 // discard it; and discard the right paren as well.
@@ -132,22 +112,19 @@ public class ArithmeticParser {
         // When the token list is empty, iteratively reduce expressions onto the
         // operand stack until the operator stack is empty.
         while (!operatorStack.empty()) {
-            operandStack.push(reduceExpression());
+            operandStack.push(reduceExpression(operatorStack, operandStack));
         }
 
-        // The resultant parse tree will have its root node as the top operand
-        // on the operand stack.
-        parseTreeResult = operandStack.pop().node();
-
-        return parseTreeResult;
+        return operandStack.pop().node();
     }
 
+    
     /* Executes part of the shunting-yard algorithm. Pops an operator off the
      * operator stack; if it's a binary operator, pops two operands off the
      * operand stack, otherwise pops just one. Builds a new ParseTreeNode object
      * from them embedded in a StackElement object and returns the StackElement
      * object. */
-    private StackElement reduceExpression() {
+    private static StackElement reduceExpression(final Stack<String> operatorStack, final Stack<StackElement> operandStack) {
         String operator = operatorStack.pop();
         if (!OPERATOR_NUMERACY.containsKey(operator)) {
             throw new IllegalStateException("operator '" + operator + "' not in unary/binary table");
@@ -308,7 +285,7 @@ public class ArithmeticParser {
      *                   ParseTreeNode object instanced from the method
      *                   arguments
      */
-    private StackElement instanceNodeInStackElem(final Character operator, final StackElement rightChild) {
+    private static StackElement instanceNodeInStackElem(final Character operator, final StackElement rightChild) {
         if (rightChild.token() != null) {
             return new StackElement(null, new ParseTreeNode(operator, Float.valueOf(rightChild.token())));
         } else {
@@ -329,7 +306,7 @@ public class ArithmeticParser {
      *                   ParseTreeNode object instanced from the method
      *                   arguments
      */
-    private StackElement instanceNodeInStackElem(final StackElement leftChild, final Character operator,
+    private static StackElement instanceNodeInStackElem(final StackElement leftChild, final Character operator,
                                         final StackElement rightChild) {
         if (leftChild.token() != null && rightChild.token() != null) {
             return new StackElement(null, new ParseTreeNode(Float.valueOf(leftChild.token()), operator,
