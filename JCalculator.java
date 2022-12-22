@@ -8,6 +8,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -18,22 +21,39 @@ import javax.swing.KeyStroke;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-public class JCalculator extends JFrame /* implements ActionListener */ {
+/**
+ * The front-end class to the entire package; when its main method is called,
+ * instances a JCalculator object, which lays out the UI and instances the other
+ * objects needed.
+ */
+public class JCalculator extends JFrame {
 
+    /*
+     * Instances the JFrame subclass JCalculator object and sets up the entire
+     * calculator UI.
+     */
     public JCalculator() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
 
+        /* Returns the dimensions of the screen. */
         Dimension screenDims = Toolkit.getDefaultToolkit().getScreenSize();
 
-        Dimension windowDims = new Dimension((int) (screenDims.getWidth() * 0.25), (int) (screenDims.getHeight() * 0.5));
-        Dimension buttonDims = new Dimension((int) (windowDims.getWidth() * 0.25), (int) (windowDims.getHeight() / 7D));
+        /* Calculating the dimensions of the window as a ratio from the screen
+         * dimensions, and calculating the dimensions of a button as a ratio
+         * from the window dimensions. */
+        Dimension windowDims = new Dimension((int) (screenDims.getWidth() * 0.25),
+                                             (int) (screenDims.getHeight() * 0.5));
+        Dimension buttonDims = new Dimension((int) (windowDims.getWidth() * 0.25),
+                                             (int) (windowDims.getHeight() / 7D));
 
         GridBagLayout calculatorLayout = new GridBagLayout();
         JPanel calculatorPanel = new JPanel(calculatorLayout);
         this.setContentPane(calculatorPanel);
         this.setSize(windowDims);
 
+        /* Setting out the column and row parameters of the GridBagLayout
+         * object. */
         calculatorLayout.columnWidths = new int[] {(int) buttonDims.getWidth(), (int) buttonDims.getWidth(),
                                                    (int) buttonDims.getWidth(), (int) buttonDims.getWidth()};
         calculatorLayout.rowHeights = new int[] {(int) buttonDims.getHeight(), (int) buttonDims.getHeight(),
@@ -41,8 +61,13 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
                                                  (int) buttonDims.getHeight(), (int) buttonDims.getHeight(),
                                                  (int) buttonDims.getHeight()};
 
-        Dimension textPaneDimensions = new Dimension((int) (buttonDims.getWidth() * 4D - 10D), (int) (buttonDims.getHeight() - 10D));
+        /* Setting the dimensions of the calculator's display field. */
+        Dimension textPaneDimensions = new Dimension((int) (buttonDims.getWidth() * 4D - 10D),
+                                                     (int) (buttonDims.getHeight() - 10D));
 
+
+        /* Instancing every button on the calculator. This process resists
+        /* summarizing in a for-loop. I've tried. */
         JButton plusOrMinusButton = new JButton("±");
         JButton zeroButton = new JButton("0");
         JButton decimalPointButton = new JButton(".");
@@ -73,6 +98,8 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         JButton clearButton = new JButton("C");
         JButton backspaceButton = new JButton("⌫");
 
+
+        /* Instancing the calculator's display field and configuring it. */
         JTextPane displayTextPane = new JTextPane();
         displayTextPane.setEditable(false);
         displayTextPane.setText("0");
@@ -82,9 +109,14 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         StyleConstants.setFontFamily(attribs, "Arial");
         StyleConstants.setFontSize(attribs, 36);
         displayTextPane.setParagraphAttributes(attribs, true);
+
+        /* Setting bounds on the display field so it doesn't resize when text
+         * overflows it. */
         displayTextPane.setMaximumSize(textPaneDimensions);
         displayTextPane.setPreferredSize(textPaneDimensions);
 
+        /* Affixing each button to the GridBagLayout object with the appropriate
+         * constraints. Can't summarize this one as a for loop either. */
         calculatorPanel.add(displayTextPane, buildConstraints(0, 0, 1, 4));
 
         calculatorPanel.add(leftParenthesisButton,  buildConstraints(1, 0, 1, 1));
@@ -93,7 +125,7 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         calculatorPanel.add(backspaceButton,        buildConstraints(1, 3, 1, 1));
 
         calculatorPanel.add(reciprocalButton,       buildConstraints(2, 0, 1, 1));
-        calculatorPanel.add(exponentiationButton,       buildConstraints(2, 1, 1, 1));
+        calculatorPanel.add(exponentiationButton,   buildConstraints(2, 1, 1, 1));
         calculatorPanel.add(squareRootButton,       buildConstraints(2, 2, 1, 1));
         calculatorPanel.add(divisionButton,         buildConstraints(2, 3, 1, 1));
 
@@ -117,6 +149,9 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         calculatorPanel.add(decimalPointButton,     buildConstraints(6, 2, 1, 1));
         calculatorPanel.add(equalsButton,           buildConstraints(6, 3, 1, 1));
 
+
+        /* Adding the InputHandler object, which implements ActionListener, to
+         * each JButton. */
         InputHandler inputHandler = new InputHandler(displayTextPane);
 
         plusOrMinusButton.addActionListener(inputHandler);
@@ -149,6 +184,8 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         clearButton.addActionListener(inputHandler);
         backspaceButton.addActionListener(inputHandler);
 
+
+        /* Setting the font on each JButton. */
         Font arial24 = new Font("Arial", Font.PLAIN, 24);
 
         plusOrMinusButton.setFont(arial24);
@@ -181,6 +218,9 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         clearButton.setFont(arial24);
         backspaceButton.setFont(arial24);
 
+
+        /* Configuring keybindings for most the JButtons, so that typing for
+         * example a 0 on the keyboard depresses the 0 buton, and so on. */
         JRootPane rootPane = getRootPane();
 
         /* rootPane.getInputMap().put(KeyStroke.getKeyStroke(""), "clickPlusOrMinusButton");
@@ -303,10 +343,16 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
             public void actionPerformed(final ActionEvent event) { backspaceButton.doClick(); }
         });
 
+
+        /* Properly assorts the GUI elements. */
         this.validate();
         this.pack();
     }
 
+    /**
+     * A shorthand method that builds a GridBagConstraints object from the
+     * method arguments.
+     */
     private GridBagConstraints buildConstraints(final int row, final int col, final int rowspan, final int colspan) {
         GridBagConstraints elementConstraints = new GridBagConstraints();
         elementConstraints.fill = GridBagConstraints.BOTH;
@@ -318,6 +364,9 @@ public class JCalculator extends JFrame /* implements ActionListener */ {
         return elementConstraints;
     }
 
+    /**
+     * The package's main() method; instances a JCalculator object and locates
+     * it on the screen. */
     public static void main(final String[] args) {
         JCalculator jcalc = new JCalculator();
         jcalc.setVisible(true);

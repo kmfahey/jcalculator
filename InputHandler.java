@@ -222,8 +222,7 @@ public class InputHandler implements ActionListener {
      * Returns the result as a String. */
     private String handleEquals(final String displayText) {
         try {
-            ArithmeticParser arithmeticParser = new ArithmeticParser(displayText);
-            float expressionValue = arithmeticParser.parseExpression().evaluate();
+            float expressionValue = ArithmeticParser.parseExpression(displayText).evaluate();
             if (Math.floor(expressionValue) == expressionValue) {
                 return String.valueOf((int) expressionValue);
             } else {
