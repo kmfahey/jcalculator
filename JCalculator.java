@@ -1,4 +1,4 @@
-package org.magentatobe.jcalculator;
+package org.kmfahey.jcalculator;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;

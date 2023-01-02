@@ -1,4 +1,4 @@
-package org.magentatobe.jcalculator;
+package org.kmfahey.jcalculator;
 
 import static java.lang.Float.NaN;
 import java.util.StringJoiner;

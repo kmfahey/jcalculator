@@ -1,4 +1,4 @@
-package org.magentatobe.jcalculator;
+package org.kmfahey.jcalculator;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

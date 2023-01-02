@@ -1,8 +1,8 @@
-package org.magentatobe.jcalculator.junit;
+package org.kmfahey.jcalculator.junit;
 
 import junit.framework.TestCase;
-import org.magentatobe.jcalculator.ArithmeticParser;
-import org.magentatobe.jcalculator.ParseTreeNode;
+import org.kmfahey.jcalculator.ArithmeticParser;
+import org.kmfahey.jcalculator.ParseTreeNode;
 
 import java.text.ParseException;
 
